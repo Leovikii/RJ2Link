@@ -10,7 +10,8 @@
     <BasePopup
       :display="isExpanded"
       theme="default"
-      :transformOrigin="isLeftHalf ? 'bottom left' : 'bottom right'"
+      :transformOrigin="popupTransformOrigin"
+      :positionStyle="popupPositionStyle"
       @close="isExpanded = false"
     >
       <div class="panel-body">
@@ -24,7 +25,7 @@
 
         <!-- South Plus Results -->
         <div class="southplus-section" v-if="results.length > 0">
-          <div class="sp-header">🔍 {{ t.spResources }} ({{ results.length }})</div>
+          <div class="sp-header"><span class="sp-text-logo">SP</span> {{ t.spResources }} ({{ results.length }})</div>
           <ul class="results-list">
             <li v-for="(result, index) in results" :key="index">
               <a :href="result.url" target="_blank" class="result-link">
@@ -45,20 +46,50 @@
       @touchstart="onDragStart"
     >
       <div class="fab-content">
-        <span class="fab-logo">🪐</span>
         <div class="fab-status">
-          <span v-if="isLoading" class="status-icon blink">⏳ {{ t.searching }}</span>
-          <span v-else-if="isError" class="status-icon error" title="点击强制重试">⚠️ 检索失败</span>
+          <span class="status-badge rj-logo" title="RJ Warp Gate">
+            <svg class="badge-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="rj-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <rect width="64" height="64" rx="14" fill="url(#rj-bg)" />
+              <text x="29" y="44" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-weight="900" font-style="italic" font-size="36" fill="#ffffff" text-anchor="middle" letter-spacing="-1">RJ</text>
+            </svg>
+          </span>
+          <span v-if="isLoading" class="status-badge rj-loading">
+            <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
+          </span>
+          <span v-else-if="isError" class="status-badge rj-error" :title="errorMessage ? `${errorMessage} (${t.clickToRetry})` : `${t.searchFailed} (${t.clickToRetry})`">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </span>
           <template v-else>
-            <span v-if="!hasAnyResource" class="status-icon empty">{{ t.noResource }}</span>
+            <span v-if="!hasAnyResource" class="status-badge rj-empty" :title="t.clickToRetry">
+              <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              <span class="badge-text">{{ t.noResource }}</span>
+            </span>
             <template v-else>
-              <span v-if="asmrOneUrl" class="status-icon asmr">
-                🎧 
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="check-icon">
-                  <polyline points="20 6 9 17 4 12"></polyline>
+              <span v-if="asmrOneUrl" class="status-badge rj-asmr" title="ASMRone 可用">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                  <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
                 </svg>
               </span>
-              <span v-if="results.length > 0" class="status-icon sp">🔍 {{ results.length }}</span>
+              <span v-if="results.length > 0" class="status-badge rj-sp" title="南+有资源">
+                <span class="sp-text-logo">SP</span>
+                <span class="badge-text">{{ results.length }}</span>
+              </span>
             </template>
           </template>
         </div>
@@ -70,7 +101,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { searchSouthPlus, SouthPlusSearchResult } from '../southplus/search';
+import { searchSouthPlus, cleanupCache, SouthPlusSearchResult } from '../southplus/search';
 import { WorkPromise } from '../../common/scraper';
 import LinkButton from '../../ui/LinkButton.vue';
 import BasePopup from '../../ui/BasePopup.vue';
@@ -82,6 +113,8 @@ const t = {
   noResource: localize('no_resources'),
   spResources: localize('southplus_resources'),
   asmrOne: localize('go_to_asmrone'),
+  searchFailed: localize('search_failed'),
+  clickToRetry: localize('click_to_retry'),
 };
 
 const props = defineProps<{
@@ -108,14 +141,106 @@ const isLeftHalf = computed(() => {
 
 const fabStyle = computed(() => {
   if (fabPos.value.x !== -1) {
-    return {
-      left: `${fabPos.value.x}px`,
-      top: `${fabPos.value.y}px`,
-      bottom: 'auto',
-      right: 'auto'
-    };
+    if (isDragging.value) {
+      // While dragging, exactly follow the mouse (left/top)
+      return {
+        left: `${fabPos.value.x}px`,
+        top: `${fabPos.value.y}px`,
+        bottom: 'auto',
+        right: 'auto'
+      };
+    } else {
+      // Desktop: Keep exactly where dragged (free floating).
+      // Mobile: Edge snapping (no padding, snaps directly to edge).
+      const isMobile = window.innerWidth <= 768;
+      
+      if (!isMobile) {
+        return {
+          left: `${fabPos.value.x}px`,
+          top: `${fabPos.value.y}px`,
+          bottom: 'auto',
+          right: 'auto'
+        };
+      }
+      
+      const padding = 0;
+      if (isLeftHalf.value) {
+        return {
+          left: `${padding}px`,
+          top: `${fabPos.value.y}px`,
+          bottom: 'auto',
+          right: 'auto'
+        };
+      } else {
+        return {
+          right: `${padding}px`,
+          top: `${fabPos.value.y}px`,
+          bottom: 'auto',
+          left: 'auto'
+        };
+      }
+    }
   }
   return {};
+});
+
+const popupPositionStyle = computed(() => {
+  if (!isExpanded.value) return {};
+  if (window.innerWidth <= 768) return {};
+
+  const style: Record<string, string> = {};
+  let x = fabPos.value.x;
+  let y = fabPos.value.y;
+  let width = 64;
+  let height = 48;
+
+  if (fabContainerRef.value) {
+    const rect = fabContainerRef.value.getBoundingClientRect();
+    x = rect.left;
+    y = rect.top;
+    width = rect.width;
+    height = rect.height;
+  } else if (x === -1) {
+    x = window.innerWidth - 30 - width;
+    y = window.innerHeight - 100 - height;
+  }
+
+  const isLeft = x < window.innerWidth / 2;
+  const isTop = y < window.innerHeight / 2;
+
+  if (isLeft) {
+    style.left = `${x}px`;
+  } else {
+    style.right = `${window.innerWidth - x - width}px`;
+  }
+
+  if (isTop) {
+    style.top = `${y + height + 16}px`;
+  } else {
+    style.bottom = `${window.innerHeight - y + 16}px`;
+  }
+
+  return style;
+});
+
+const popupTransformOrigin = computed(() => {
+  if (window.innerWidth <= 768) return 'bottom center';
+  
+  let x = fabPos.value.x;
+  let y = fabPos.value.y;
+  if (fabContainerRef.value) {
+    const rect = fabContainerRef.value.getBoundingClientRect();
+    x = rect.left;
+    y = rect.top;
+  } else if (x === -1) {
+    x = window.innerWidth - 94;
+    y = window.innerHeight - 148;
+  }
+  
+  const isLeft = x < window.innerWidth / 2;
+  const isTop = y < window.innerHeight / 2;
+  
+  return `${isTop ? 'top' : 'bottom'} ${isLeft ? 'left' : 'right'}`;
 });
 
 let hoverTimer: number | null = null;
@@ -126,7 +251,7 @@ function onContainerMouseEnter() {
     clearTimeout(hoverTimer);
     hoverTimer = null;
   }
-  if (!isDragging && isClickable.value && !isExpanded.value) {
+  if (!isDragging.value && isClickable.value && !isExpanded.value) {
     isExpanded.value = true;
   }
 }
@@ -144,7 +269,7 @@ let dragStartX = 0;
 let dragStartY = 0;
 let initialFabX = 0;
 let initialFabY = 0;
-let isDragging = false;
+const isDragging = ref(false);
 let dragDistance = 0;
 let lastTouchTime = 0;
 
@@ -173,7 +298,7 @@ function onDragStart(e: MouseEvent | TouchEvent) {
     if ((e as MouseEvent).button !== 0) return; // Only left click
   }
   
-  isDragging = false;
+  isDragging.value = false;
   dragDistance = 0;
   isTransitioning.value = false;
   
@@ -209,7 +334,7 @@ function onDragMove(e: MouseEvent | TouchEvent) {
   dragDistance = Math.sqrt(dx * dx + dy * dy);
   
   if (dragDistance > 5) {
-    isDragging = true;
+    isDragging.value = true;
     if ('touches' in e && e.cancelable) {
        e.preventDefault();
     }
@@ -235,25 +360,33 @@ function onDragEnd() {
   window.removeEventListener('mouseup', onDragEnd);
   window.removeEventListener('touchend', onDragEnd);
   
-  if (!isDragging || dragDistance <= 5) {
+  const isMobile = window.innerWidth <= 768;
+  const storageKey = isMobile ? 'rj_warp_gate_fab_pos_mobile' : 'rj_warp_gate_fab_pos_desktop';
+
+  if (!isDragging.value || dragDistance <= 5) {
     togglePanel();
   } else {
-    // Snap to edge
-    if (fabContainerRef.value) {
-      isTransitioning.value = true;
-      const rect = fabContainerRef.value.getBoundingClientRect();
-      const padding = window.innerWidth <= 768 ? 0 : 30; // Snap exactly to edge on mobile
-      
-      const snapX = isLeftHalf.value ? padding : window.innerWidth - rect.width - padding;
-      fabPos.value.x = snapX;
-      
-      if (typeof GM_setValue !== 'undefined') {
-        GM_setValue('rj_warp_gate_fab_pos', JSON.stringify(fabPos.value));
+    if (isMobile) {
+      // Snap to edge on mobile
+      if (fabContainerRef.value) {
+        isTransitioning.value = true;
+        const rect = fabContainerRef.value.getBoundingClientRect();
+        const snapX = isLeftHalf.value ? 0 : window.innerWidth - rect.width;
+        fabPos.value.x = snapX;
+        
+        if (typeof GM_setValue !== 'undefined') {
+          GM_setValue(storageKey, JSON.stringify(fabPos.value));
+        }
+        
+        setTimeout(() => {
+          isTransitioning.value = false;
+        }, 300);
       }
-      
-      setTimeout(() => {
-        isTransitioning.value = false;
-      }, 300);
+    } else {
+      // Free floating on desktop
+      if (typeof GM_setValue !== 'undefined') {
+        GM_setValue(storageKey, JSON.stringify(fabPos.value));
+      }
     }
   }
 }
@@ -270,7 +403,7 @@ function fetchSouthPlus(force = false) {
   searchSouthPlus(props.rjCode, force).then(response => {
     if (response.isCooldown || !response.success) {
       spState.value = 'error';
-      errorMessage.value = response.errorMsg || '检索失败';
+      errorMessage.value = localize(response.errorMsg) || response.errorMsg || t.searchFailed;
       return;
     }
     if (response.results.length === 0) {
@@ -289,7 +422,16 @@ onMounted(async () => {
 
   // Restore position
   if (typeof GM_getValue !== 'undefined') {
-    const saved = GM_getValue('rj_warp_gate_fab_pos', null);
+    const isMobile = window.innerWidth <= 768;
+    const storageKey = isMobile ? 'rj_warp_gate_fab_pos_mobile' : 'rj_warp_gate_fab_pos_desktop';
+    
+    // Fallback migration from old universal key for desktop
+    let saved = GM_getValue(storageKey, null);
+    if (!saved && !isMobile) {
+      saved = GM_getValue('rj_warp_gate_fab_pos', null);
+      if (saved) GM_setValue(storageKey, saved);
+    }
+    
     if (saved) {
       try {
         const pos = JSON.parse(saved);
@@ -298,8 +440,15 @@ onMounted(async () => {
           setTimeout(clampPosition, 50); // Clamp after DOM might be ready
         }
       } catch (e) {}
+    } else if (isMobile) {
+      // Mobile default (hidden on right edge by default)
+      fabPos.value = { x: window.innerWidth, y: window.innerHeight * 0.45 };
+      setTimeout(clampPosition, 50);
     }
   }
+
+  // Clean up legacy or expired caches
+  cleanupCache();
 
   // Fire both searches in parallel
   WorkPromise.checkAsmrOne(props.rjCode).then(url => {
@@ -318,14 +467,18 @@ onUnmounted(() => {
 const isLoading = computed(() => asmrOneState.value === 'loading' || spState.value === 'loading');
 const isError = computed(() => spState.value === 'error');
 const hasAnyResource = computed(() => asmrOneUrl.value !== null || results.value.length > 0);
-const isClickable = computed(() => !isLoading.value && (hasAnyResource.value || isError.value));
+const isClickable = computed(() => !isLoading.value && (hasAnyResource.value || isError.value || spState.value === 'empty'));
 
 function togglePanel() {
   if (isLoading.value) return;
-  if (isError.value) {
+  
+  // If there's an error, or if there's no resource at all, clicking should force a full retry
+  if (isError.value || (!hasAnyResource.value && spState.value === 'empty')) {
     fetchSouthPlus(true); // Force retry bypasses cache
+    // Optionally retry asmrOne here
     return;
   }
+  
   if (isClickable.value) {
     isExpanded.value = !isExpanded.value;
   }
@@ -362,9 +515,9 @@ function togglePanel() {
   backdrop-filter: blur(12px) saturate(120%);
   -webkit-backdrop-filter: blur(12px) saturate(120%);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 30px;
-  padding: 8px 16px;
-  height: 48px;
+  border-radius: 22px;
+  padding: 0 13px;
+  height: 44px;
   display: flex;
   align-items: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -392,18 +545,18 @@ function togglePanel() {
 
 @media screen and (max-width: 768px) {
   .rj-fab-container:not(.is-expanded) .fab-trigger {
-    transform: translateX(18px); /* Half hide into the right edge */
-    opacity: 0.5;
+    transform: translateX(14px); /* Hides the right edge padding like a bookmark */
+    opacity: 0.9;
   }
   
   .rj-fab-container:not(.is-expanded).is-left-half .fab-trigger {
-    transform: translateX(-18px); /* Half hide into the left edge */
+    transform: translateX(-14px); /* Hides the left edge padding */
   }
   
   .rj-fab-container:not(.is-expanded) .fab-trigger:active,
   .rj-fab-container:not(.is-expanded) .fab-trigger.is-loading,
   .rj-fab-container:not(.is-expanded) .fab-trigger.is-error {
-    transform: translateX(0); /* Reveal fully when interacting */
+    transform: translateX(0); /* Reveal fully when interacting or erroring */
     opacity: 1;
   }
 }
@@ -411,67 +564,68 @@ function togglePanel() {
 .fab-content {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.fab-logo {
-  font-size: 20px;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+  white-space: nowrap;
 }
 
 .fab-status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 14px;
 }
 
-.status-icon {
+.status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  justify-content: center;
   color: #fff;
-  gap: 4px; /* Add gap between emoji and SVG */
+  gap: 6px;
+  transition: all 0.3s ease;
 }
 
-.check-icon {
-  width: 12px;
-  height: 12px;
-  margin-left: 2px;
+.status-badge.rj-loading, .status-badge.rj-empty {
+  color: #fff;
+  opacity: 0.85;
 }
 
-.status-icon.asmr {
+.sp-text-logo {
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: -0.5px;
+}
+
+.badge-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.spin-icon {
+  width: 18px;
+  height: 18px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.status-badge.rj-asmr {
   color: #51d8cf;
-  background: rgba(81, 216, 207, 0.15);
 }
 
-.status-icon.sp {
+.status-badge.rj-sp {
   color: #a78bfa;
-  background: rgba(167, 139, 250, 0.15);
 }
 
-.status-icon.error {
+.status-badge.rj-error {
   color: #fca5a5;
-  background: rgba(248, 113, 113, 0.15);
 }
 
-.status-icon.empty {
-  color: #9ca3af;
-  font-weight: normal;
+.badge-text {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.blink {
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
 
 .panel-body {
   padding: 16px;
@@ -517,7 +671,11 @@ function togglePanel() {
   font-size: 13px;
   font-weight: 600;
   color: #a78bfa;
-  padding-left: 4px;
+  padding-left: 8px;
+  border-left: 3px solid #a78bfa;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .results-list {
