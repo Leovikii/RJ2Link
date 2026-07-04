@@ -1,26 +1,42 @@
 <template>
-  <div class="rj-warp-gate-img-container">
+  <div class="rj-warp-gate-img-container" :style="{ aspectRatio }">
     <img 
       v-if="src" 
       :src="src" 
+      @load="onImageLoad"
       @mouseenter="isHovered = true" 
       @mouseleave="isHovered = false"
-      :class="{ 'is-hovered': isHovered }"
+      :class="{ 'is-hovered': isHovered, 'is-loaded': isLoaded }"
     />
-    <div v-else class="rj-warp-gate-img-placeholder">
+    <div v-if="!src || !isLoaded" class="rj-warp-gate-img-placeholder">
       <div class="rj-warp-gate-img-skeleton"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   src?: string;
-}>();
+  aspectRatio?: string;
+}>(), {
+  aspectRatio: '4/3' // Default to 4/3 for DLsite covers
+});
 
 const isHovered = ref(false);
+const isLoaded = ref(false);
+
+const onImageLoad = () => {
+  isLoaded.value = true;
+};
+
+// Reset loading state when src changes
+watch(() => props.src, (newSrc, oldSrc) => {
+  if (newSrc !== oldSrc) {
+    isLoaded.value = false;
+  }
+});
 </script>
 
 <style scoped>
@@ -29,20 +45,26 @@ const isHovered = ref(false);
   justify-content: center;
   align-items: center;
   width: 100%;
-  /* Removed height: 100% and min-height to allow tight wrapping of image */
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   overflow: hidden;
+  position: relative;
 }
 
 .rj-warp-gate-img-container img {
   width: 100%;
-  height: auto;
-  max-height: 350px;
-  object-fit: cover; /* fill the container */
+  height: 100%;
+  object-fit: cover; /* fill the container while preserving aspect ratio */
   border-radius: 8px;
-  transition: transform 0.3s ease;
-  display: block; /* prevent phantom margins */
+  transition: transform 0.3s ease, opacity 0.4s ease;
+  display: block;
+  opacity: 0; /* Starts transparent */
+  z-index: 2;
+  position: relative;
+}
+
+.rj-warp-gate-img-container img.is-loaded {
+  opacity: 1;
 }
 
 .rj-warp-gate-img-container img.is-hovered {
@@ -50,19 +72,22 @@ const isHovered = ref(false);
 }
 
 .rj-warp-gate-img-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
 }
 
 .rj-warp-gate-img-skeleton {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
 }

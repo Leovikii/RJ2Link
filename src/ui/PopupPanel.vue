@@ -4,18 +4,18 @@
       v-if="display"
       ref="popupRef" 
       class="rj-warp-gate-popup"
-      :class="[`theme-${theme}`, { 'is-centered': isCentered, 'is-mobile-expanded': isExpandedMobile }]"
+      :class="[`theme-${theme}`, { 'is-centered': isCentered }]"
       :style="[positionStyle, (dynamicHeight && !isMobile) ? { height: dynamicHeight + 'px' } : {}, transformOrigin ? { transformOrigin } : {}]"
-      @touchstart="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
     >
-      <div class="popup-drag-handle">
-        <div class="drag-pill"></div>
-      </div>
-      <div class="popup-close-btn" @click="$emit('close')">✕</div>
-
       <div class="popup-inner-wrapper" ref="innerWrapperRef">
+        <div class="popup-top-bar" v-if="title || $slots.header">
+          <div class="popup-top-bar-title">
+            <slot name="header">{{ title }}</slot>
+          </div>
+          <div class="popup-close-btn in-bar" @click="$emit('close')">✕</div>
+        </div>
+        <div class="popup-close-btn" v-else @click="$emit('close')">✕</div>
+
         <slot></slot>
       </div>
     </div>
@@ -30,6 +30,7 @@ const props = withDefaults(defineProps<{
   theme?: 'maniax' | 'girls' | 'default';
   positionStyle?: Record<string, any>;
   transformOrigin?: string;
+  title?: string;
 }>(), {
   theme: 'default',
   positionStyle: () => ({})
@@ -47,7 +48,6 @@ const dynamicHeight = ref<number | null>(null);
 let resizeObserver: ResizeObserver | null = null;
 
 const isMobile = ref(false);
-const isExpandedMobile = ref(false);
 
 function checkMobile() {
   // Use 768px to cover wider mobile devices like tablets/foldables elegantly
@@ -62,48 +62,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile);
 });
 
-let touchStartY = 0;
-let touchCurrentY = 0;
-let isDraggingHandle = false;
-
-function onTouchStart(e: TouchEvent) {
-  if (!isMobile.value) return;
-  const target = e.target as HTMLElement;
-  const isHandle = target.closest('.popup-drag-handle');
-  const scrollContainer = target.closest('.popup-inner-wrapper, .panel-right, .results-list');
-  const isAtTop = scrollContainer ? scrollContainer.scrollTop <= 0 : true;
-
-  if (isHandle || isAtTop) {
-    touchStartY = e.touches[0].clientY;
-    touchCurrentY = touchStartY;
-    isDraggingHandle = true;
-  }
-}
-
-function onTouchMove(e: TouchEvent) {
-  if (!isDraggingHandle) return;
-  touchCurrentY = e.touches[0].clientY;
-}
-
-function onTouchEnd() {
-  if (!isDraggingHandle) return;
-  isDraggingHandle = false;
-  const dy = touchCurrentY - touchStartY;
-  
-  if (dy > 50) {
-    if (isExpandedMobile.value) {
-      isExpandedMobile.value = false;
-    } else {
-      emit('close');
-    }
-  } else if (dy < -50) {
-    isExpandedMobile.value = true;
-  }
-}
-
 watch(() => props.display, (newVal) => {
   if (newVal) {
-    isExpandedMobile.value = false; // Reset on open
     nextTick(() => {
       if (innerWrapperRef.value) {
         if (!resizeObserver) {
@@ -158,6 +118,7 @@ watch(() => props.display, (newVal) => {
   user-select: text;    /* Allow text selection */
   transition: height 0.35s cubic-bezier(0.25, 1, 0.5, 1);
   overflow: hidden;
+  overscroll-behavior: contain; /* Prevent scroll chaining and pull-to-refresh */
 }
 
 .rj-warp-gate-popup.is-centered {
@@ -202,27 +163,33 @@ watch(() => props.display, (newVal) => {
   transition: all 0.2s ease;
 }
 
+.popup-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.popup-top-bar-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: -0.5px;
+  user-select: text;
+}
+
+.popup-close-btn.in-bar {
+  position: static;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
 .popup-close-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.1);
-}
-
-.popup-drag-handle {
-  display: none;
-  width: 100%;
-  height: 20px;
-  justify-content: center;
-  align-items: center;
-  margin-top: -8px;
-  margin-bottom: 8px;
-  cursor: grab;
-}
-
-.drag-pill {
-  width: 40px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
 }
 
 /* Transitions */
@@ -243,11 +210,9 @@ watch(() => props.display, (newVal) => {
 
 @media screen and (max-width: 768px) {
   .popup-close-btn {
-    display: none;
-  }
-  
-  .popup-drag-handle {
-    display: flex;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
   }
   
   .rj-warp-gate-popup {
@@ -261,10 +226,6 @@ watch(() => props.display, (newVal) => {
     padding: 16px 12px;
     padding-bottom: max(16px, env(safe-area-bottom));
     transition: max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  
-  .rj-warp-gate-popup.is-mobile-expanded {
-    max-height: 90vh !important;
   }
   
   .rj-warp-gate-popup.is-centered {
@@ -282,6 +243,11 @@ watch(() => props.display, (newVal) => {
   .fade-enter-active,
   .fade-leave-active {
     transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+  }
+  
+  .popup-inner-wrapper {
+    flex: 1;
+    min-height: 0;
   }
 }
 </style>

@@ -3,12 +3,12 @@
     :display="state.display"
     :theme="isGirls ? 'girls' : 'maniax'"
     :positionStyle="positionStyle"
+    :title="state.rjCode.toUpperCase()"
     transformOrigin="top left"
     @close="closePopup"
   >
     <div v-if="loading" class="popup-skeleton">
         <div class="skeleton-header">
-          <div class="skeleton-eyebrow shimmer"></div>
           <div class="skeleton-title shimmer"></div>
           <div class="skeleton-title short shimmer"></div>
         </div>
@@ -62,7 +62,6 @@
       <div v-else class="popup-content">
         <div class="popup-header">
           <div class="header-main">
-            <div class="rj-eyebrow" :title="copyHint" @click.stop="onCopyRjCode">{{ state.rjCode.toUpperCase() }}</div>
             <div class="work-title" :title="titleHint" @click="onCopyTitle">
               {{ title || 'Loading...' }}
             </div>
@@ -280,7 +279,6 @@ watch(() => props.state.display, (newVal) => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-right: 24px;
 }
 
 .header-main {
@@ -310,12 +308,11 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .work-title {
-  font-size: 1.4em;
+  font-size: 1.15em;
   font-weight: 700;
   line-height: 1.3;
   cursor: pointer;
   transition: color 0.2s;
-  padding-right: 20px; /* Space for close btn */
   flex: 1;
 }
 
@@ -328,7 +325,7 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .panel-left {
-  flex: 0 0 240px;
+  flex: 0 0 210px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -337,13 +334,13 @@ watch(() => props.state.display, (newVal) => {
 .buttons-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-height: 86px; /* Space for 2 buttons to prevent reflow */
 }
 
 .dlsite-cover-container {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
 .panel-right {
@@ -381,7 +378,7 @@ watch(() => props.state.display, (newVal) => {
 
 .tags-section {
   display: flex;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .section-title {
@@ -410,22 +407,14 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-header {
-  margin-bottom: 16px;
-}
-
-.skeleton-eyebrow {
-  width: 80px;
-  height: 22px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
 }
 
 .skeleton-title {
   width: 90%;
-  height: 21px;
+  height: 18px;
   border-radius: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -440,8 +429,8 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-left {
-  flex: 0 0 240px;
-  width: 240px;
+  flex: 0 0 210px;
+  width: 210px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -449,7 +438,7 @@ watch(() => props.state.display, (newVal) => {
 
 .skeleton-cover {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 4/3;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
 }

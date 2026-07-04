@@ -2,6 +2,7 @@
   <PopupPanel
     :display="state.display"
     theme="default"
+    title="Search Result"
     :positionStyle="positionStyle"
     transformOrigin="bottom right"
     @close="closePopup"
@@ -290,5 +291,14 @@ watch(() => props.state.rjCode, (newRjCode) => {
   color: #9ca3af;
   text-align: center;
   padding: 16px 0;
+}
+
+@media screen and (max-width: 768px) {
+  .panel-body,
+  .southplus-section,
+  .results-list {
+    flex: 1;
+    min-height: 0;
+  }
 }
 </style>
