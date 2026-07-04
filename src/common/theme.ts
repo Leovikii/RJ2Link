@@ -7,7 +7,7 @@ let styleElement: HTMLStyleElement | null = null;
 let metaElement: HTMLMetaElement | null = null;
 
 const darkThemeCss = `
-  /* 1. 全局背景深色化 */
+  /* 1. Global dark background */
   html.rj-warp-gate-dark-mode,
   html.rj-warp-gate-dark-mode body,
   html.rj-warp-gate-dark-mode #wrap,
@@ -24,7 +24,7 @@ const darkThemeCss = `
     color: #d1d5db !important;
   }
 
-  /* 2. 论坛主要表格和容器深色化 */
+  /* 2. Darken main forum tables and containers */
   html.rj-warp-gate-dark-mode .t_table,
   html.rj-warp-gate-dark-mode .t_table td,
   html.rj-warp-gate-dark-mode .t_table th,
@@ -65,7 +65,7 @@ const darkThemeCss = `
     color: #e5e7eb !important;
   }
 
-  /* 3. 表头和标题栏稍微亮一点点，增加层次感 */
+  /* 3. Slightly lighter headers and title bars for depth */
   html.rj-warp-gate-dark-mode .h,
   html.rj-warp-gate-dark-mode .h td,
   html.rj-warp-gate-dark-mode .h th,
@@ -84,7 +84,7 @@ const darkThemeCss = `
     color: #f3f4f6 !important;
   }
 
-  /* 4. 链接颜色调整为适合暗底的亮蓝色 */
+  /* 4. Adjust link colors for dark background */
   html.rj-warp-gate-dark-mode a {
     color: #60a5fa !important;
   }
@@ -92,7 +92,7 @@ const darkThemeCss = `
     color: #93c5fd !important;
   }
 
-  /* 5. 修复用户发帖时经常带的内联白色背景和黑色字体 */
+  /* 5. Fix inline white backgrounds and black text often included in user posts */
   html.rj-warp-gate-dark-mode .tpc_content font[color="#000000"],
   html.rj-warp-gate-dark-mode .tpc_content font[color="black"],
   html.rj-warp-gate-dark-mode .tpc_content [style*="color: #000"],
@@ -101,7 +101,7 @@ const darkThemeCss = `
     color: #d1d5db !important;
   }
   
-  /* 6. 修复内联白色背景和各种白色区块 (如购买框、引用框) */
+  /* 6. Fix inline white backgrounds and various white blocks (like purchase boxes, quote boxes) */
   html.rj-warp-gate-dark-mode [style*="background-color: #fff"],
   html.rj-warp-gate-dark-mode [style*="background-color:#fff"],
   html.rj-warp-gate-dark-mode [style*="background-color: white"],
@@ -122,7 +122,7 @@ const darkThemeCss = `
     color: #d1d5db !important;
   }
 
-  /* 7. 输入框和文本域深色化 */
+  /* 7. Darken input fields and textareas */
   html.rj-warp-gate-dark-mode input[type="text"],
   html.rj-warp-gate-dark-mode input[type="password"],
   html.rj-warp-gate-dark-mode textarea,
@@ -133,7 +133,7 @@ const darkThemeCss = `
     border: 1px solid #444 !important;
   }
 
-  /* 8. 修复刺眼的纯蓝色字体为适合暗色的亮蓝色 (包括标题、发帖内容等所有地方) */
+  /* 8. Fix harsh pure blue fonts to a bright blue suitable for dark backgrounds */
   html.rj-warp-gate-dark-mode font[color="#0000FF" i],
   html.rj-warp-gate-dark-mode font[color="blue" i],
   html.rj-warp-gate-dark-mode [style*="color: #0000FF" i],

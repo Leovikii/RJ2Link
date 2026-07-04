@@ -1,9 +1,9 @@
 import { POPUP_CSS, VOICELINK_CLASS } from "./config/constants";
-import { Parser } from "./core/parser";
-import { Popup } from "./ui/popup";
+import { Parser } from "./sites/southplus/parser";
+import { Popup } from "./sites/southplus/popup";
 import { Csp } from "./utils/csp";
-import { initThemeManager } from "./core/theme";
-import { initDLSiteInjector } from "./core/dlsite_injector";
+import { initThemeManager } from "./common/theme";
+import { initDLSiteInjector } from "./sites/dlsite/injector";
 
 // Initialize dark mode as early as possible (run-at: document-start)
 if (!document.location.hostname.includes("dlsite.com")) {

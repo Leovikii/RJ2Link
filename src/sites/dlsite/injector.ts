@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import DlsiteIntegration from '../ui/DlsiteIntegration.vue';
+import FloatingWidget from './FloatingWidget.vue';
 
 export function initDLSiteInjector() {
   // Extract RJ code from URL
@@ -18,7 +18,7 @@ export function initDLSiteInjector() {
   document.body.appendChild(mountPoint);
 
   // Mount the Vue app
-  const app = createApp(DlsiteIntegration, {
+  const app = createApp(FloatingWidget, {
     rjCode
   });
   app.mount(mountPoint);

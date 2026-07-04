@@ -1,6 +1,6 @@
 import { getHttpAsync } from '../utils/common';
 import { Csp } from '../utils/csp';
-import * as DLsiteParser from './dlsite_parser';
+import * as DLsiteParser from '../sites/dlsite/parser';
 
 export async function getAnnouncePromise(rjCode, parentRJ) {
             const url = `https://www.dlsite.com/maniax/announce/=/product_id/${rjCode}.html`;
@@ -57,7 +57,6 @@ export async function getApi2Promise(rjCode, locale = undefined) {
         }
 
 export async function getApiPromise(rjCode, locale = undefined) {
-            //获取对应语言下的实际信息
             let url = `https://www.dlsite.com/maniax/product/info/ajax?product_id=${rjCode}&cdn_cache_min=1` + (locale ? `&locale=${locale}` : "");
             let resp = await getHttpAsync(url);
             let data;
@@ -100,15 +99,13 @@ export async function getCirclePromise(rjCode, apiPromise) {
             } catch (e) { }
 
             if (!data || !data.name) {
-                //未获取到社团名称则使用html解析获取
                 url = `https://www.dlsite.com/maniax/circle/profile/=/maker_id/${maker_id}.html`;
                 resp = await getHttpAsync(url);
                 data = data ? data : {};
                 if (resp.readyState === 4 && resp.status === 200) {
                     let doc = new DOMParser().parseFromString(Csp.createHTML(resp.responseText), "text/html");
-                    let name = doc.querySelector("strong.prof_maker_name");
-                    name = name ? name.innerText : null;
-                    data.name = name;
+                    let nameElement = doc.querySelector("strong.prof_maker_name");
+                    data.name = nameElement ? (nameElement as HTMLElement).innerText : null;
                 }
             }
 
@@ -208,7 +205,6 @@ export async function getTranslatablePromise(rjCode, site = "maniax") {
                 let lang = map[key];
                 let status = data.translationStatusForTranslator[lang];
                 if (!status) {
-                    //状况未知
                     continue;
                 }
                 result[key].agree = status.available;
@@ -220,9 +216,8 @@ export async function getTranslatablePromise(rjCode, site = "maniax") {
         }
 
 export async function getTranslatableApiPromise(rjCode, site = "maniax") {
-            //新的可用api，用于搜索作品翻译情况，但也可以获得其它信息。
             rjCode = rjCode.toUpperCase();
-            let url = `https://www.dlsite.com/${site}/api/=/translatableProducts.json?keyword=${rjCode}`;    //可以使用locale参数指定语言，但这里不需要
+            let url = `https://www.dlsite.com/${site}/api/=/translatableProducts.json?keyword=${rjCode}`;
             let resp = await getHttpAsync(url, true);
             let data;
             if (resp.readyState === 4 && resp.status === 200) {
@@ -232,7 +227,6 @@ export async function getTranslatableApiPromise(rjCode, site = "maniax") {
                 throw new Error(`无法通过API获取${rjCode}的翻译信息：${resp.status} ${resp.statusText}`);
             }
 
-            //从结果中找到对应RJ号，由于关键字是RJ号的话结果一般都在第一页，所以就放弃翻页寻找了
             if (data.meta && data.meta.code !== 200) {
                 throw new Error(`无法通过API查询${rjCode}的翻译信息：${data.meta.code} - ${data.meta.errorType} - ${data.meta.errorMessage}`);
             }
@@ -246,7 +240,6 @@ export async function getTranslatableApiPromise(rjCode, site = "maniax") {
                 }
             }
 
-            //未找到则返回空对象
             return {};
 
         }
@@ -287,25 +280,20 @@ export function getWorkRequestPromise(rjCode) {
 
                         let api = await t.api2;
                         if (api.translation_info) {
-                            //api2有效
                             if (!api.translation_info.is_original) {
-                                //通过再次查询获得翻译标题
                                 api = await getApi2Promise(rjCode, api.lang);
                             }
                             t._translated_title = api.work_name;
                             return t._translated_title;
                         }
 
-                        //api2无效，通过api查询
                         api = await t.api;
                         if (!api.translation_info) {
-                            //api无效则无法获取标题（网页获取希望渺茫）
                             t._translated_title = null;
                             return null;
                         }
 
                         if (!api.translation_info.is_original) {
-                            //非原作则再次查询
                             api = await getApiPromise(rjCode, api.lang);
                         }
                         t._translated_title = api.work_name;

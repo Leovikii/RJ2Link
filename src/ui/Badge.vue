@@ -64,6 +64,15 @@ defineProps<{
 .theme-type-8 { background-color: #134e4a; color: #ccfbf1; border: 1px solid #0d9488; } /* Voice Comic */
 .theme-type-9 { background-color: #3f3f46; color: #e4e4e7; border: 1px solid #71717a; } /* Other */
 
+@media screen and (max-width: 768px) {
+  .rj-warp-gate-capsule {
+    padding: 2px 6px;
+    font-size: 0.85em;
+    border-radius: 4px;
+    line-height: 1.2;
+  }
+}
+
 .theme-default {
   background-color: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.9);

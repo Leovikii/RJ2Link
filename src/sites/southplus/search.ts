@@ -12,17 +12,48 @@ export interface SouthPlusSearchResponse {
   isCooldown?: boolean;
 }
 
+const DEBUG_ENABLED = true;
+function debug(...args: any[]) {
+  if (DEBUG_ENABLED) {
+    console.log('[RJ-Warp-Gate Debug] [SouthPlus Search]', ...args);
+  }
+}
+
+const CACHE_VERSION = 1; // Increment when cache payload format or search logic changes drastically
+
+/**
+ * Cleans up expired or deprecated cache keys from Tampermonkey storage.
+ */
+export async function cleanupCache() {
+  if (typeof GM_listValues === 'undefined' || typeof GM_deleteValue === 'undefined' || typeof GM_getValue === 'undefined') return;
+  const keys = await GM_listValues();
+  const now = Date.now();
+  for (const key of keys) {
+    // Delete legacy v2 keys or expired regular cache keys
+    if (key.startsWith('sp_cache_v2_')) {
+      await GM_deleteValue(key);
+    } else if (key.startsWith('sp_cache_')) {
+      const cached: any = await GM_getValue(key);
+      if (!cached || !cached.version || cached.version !== CACHE_VERSION || (now - cached.time > 12 * 3600 * 1000)) {
+        await GM_deleteValue(key);
+      }
+    }
+  }
+}
+
 /**
  * Perform a background search on South Plus.
  */
 export async function searchSouthPlus(rjCode: string, force = false): Promise<SouthPlusSearchResponse> {
+  debug(`Initiating search for ${rjCode} (force: ${force})`);
   const cacheKey = `sp_cache_${rjCode.toUpperCase()}`;
   
   // 1. Local Cache Check
   if (!force && typeof GM_getValue !== "undefined") {
     const cached: any = await GM_getValue(cacheKey);
-    // Cache valid for 12 hours
-    if (cached && Date.now() - cached.time < 12 * 3600 * 1000) {
+    // Cache valid for 12 hours, must match current cache version
+    if (cached && cached.version === CACHE_VERSION && Date.now() - cached.time < 12 * 3600 * 1000) {
+      debug('Returned from cache', cached.data);
       return cached.data;
     }
   }
@@ -50,10 +81,12 @@ export async function searchSouthPlus(rjCode: string, force = false): Promise<So
     ? await GM_getValue("last_forum_domain", "www.south-plus.net") 
     : "www.south-plus.net";
     
+  debug(`Using domain: ${domain}`);
   const SEARCH_URL_GET = `https://${domain}/search.php`;
   const SEARCH_URL_POST = `https://${domain}/search.php?step=2`;
 
   return new Promise((resolve) => {
+    debug(`Sending GET request to ${SEARCH_URL_GET}`);
     // 1. First GET to retrieve CSRF token and check if we are already in cooldown
     GM_xmlhttpRequest({
       method: 'GET',
@@ -64,13 +97,20 @@ export async function searchSouthPlus(rjCode: string, force = false): Promise<So
         const doc = parser.parseFromString(html, 'text/html');
 
         // Check if there is a cooldown or error message right away
-        const errorText = doc.querySelector('.t .f_one b')?.textContent || '';
-        if (errorText.includes('距离上次搜索时间') || errorText.includes('连续两次搜索')) {
-          return resolve({ success: false, results: [], isCooldown: true, errorMsg: errorText });
+        const errorText = doc.querySelector('.t .f_one b')?.textContent?.trim() || '';
+        if (errorText) {
+          debug('GET Error detected:', errorText);
+          return resolve({ success: false, results: [], isCooldown: errorText.includes('上次搜索时间') || errorText.includes('连续两次搜索'), errorMsg: errorText });
         }
 
         // Try to find the search form and extract all inputs dynamically
         const searchForm = doc.querySelector('form[action*="search.php"]') || doc.querySelector('form[name="schform"]') || doc.forms[0];
+        
+        if (!searchForm || !searchForm.innerHTML.includes('keyword')) {
+          debug('Search form not found. Likely not logged in.');
+          return resolve({ success: false, results: [], errorMsg: 'error_form_not_found' });
+        }
+        
         const formData = new URLSearchParams();
         
         if (searchForm) {
@@ -110,6 +150,7 @@ export async function searchSouthPlus(rjCode: string, force = false): Promise<So
             formData.set('sch_time', 'all');
         }
         
+        debug('Sending POST request with params:', Array.from(formData.entries()));
         GM_xmlhttpRequest({
           method: 'POST',
           url: SEARCH_URL_POST,
@@ -124,14 +165,16 @@ export async function searchSouthPlus(rjCode: string, force = false): Promise<So
             const postDoc = parser.parseFromString(postHtml, 'text/html');
 
             // Check for cooldown or error again
-            const postErrorText = postDoc.querySelector('.t .f_one b')?.textContent || '';
-            if (postErrorText.includes('距离上次搜索时间') || postErrorText.includes('连续两次搜索') || postErrorText.includes('不能少于')) {
-              return resolve({ success: false, results: [], isCooldown: true, errorMsg: postErrorText });
+            const postErrorText = postDoc.querySelector('.t .f_one b')?.textContent?.trim() || '';
+            if (postErrorText && !postErrorText.includes('没有找到') && !postErrorText.includes('没有查找匹配')) {
+              debug('POST Error detected:', postErrorText);
+              return resolve({ success: false, results: [], isCooldown: postErrorText.includes('上次搜索时间') || postErrorText.includes('连续两次搜索') || postErrorText.includes('不能少于'), errorMsg: postErrorText });
             }
 
             if (postHtml.includes('抱歉，没有找到匹配结果') || postHtml.includes('没有查找匹配的内容')) {
+              debug('Empty results from South+ (explicit no match)');
               const emptyResponse = { success: true, results: [] };
-              if (typeof GM_setValue !== "undefined") GM_setValue(cacheKey, { data: emptyResponse, time: Date.now() });
+              if (typeof GM_setValue !== "undefined") GM_setValue(cacheKey, { version: CACHE_VERSION, data: emptyResponse, time: Date.now() });
               return resolve(emptyResponse);
             }
 
@@ -140,6 +183,11 @@ export async function searchSouthPlus(rjCode: string, force = false): Promise<So
             
             // South+ uses URL rewrites like read.php?tid-123.html or read.php?tid=123
             const aTags = Array.from(postDoc.querySelectorAll('a[href^="read.php?tid"]'));
+            
+            if (aTags.length === 0) {
+              debug('No result links found despite form submission (possible DDoS protection or login redirect). HTML snippet:', postHtml.substring(0, 500));
+              return resolve({ success: false, results: [], errorMsg: 'error_no_results' });
+            }
             
             
             aTags.forEach((aTag) => {
@@ -200,7 +248,8 @@ export async function searchSouthPlus(rjCode: string, force = false): Promise<So
             });
 
             const finalResponse = { success: true, results };
-            if (typeof GM_setValue !== "undefined") GM_setValue(cacheKey, { data: finalResponse, time: Date.now() });
+            debug(`Search completed successfully, extracted ${results.length} resources.`, results);
+            if (typeof GM_setValue !== "undefined") GM_setValue(cacheKey, { version: CACHE_VERSION, data: finalResponse, time: Date.now() });
             resolve(finalResponse);
           },
           onerror: (err: any) => {

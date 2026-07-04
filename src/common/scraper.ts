@@ -1,7 +1,7 @@
 import { work_promise } from '../utils/common';
 import { DateParser } from '../utils/date';
 import * as DLsite from './api';
-import * as Linkage from './linkage';
+import * as Linkage from '../sites/southplus/linkage';
 import { LANG_MAP } from '../config/constants';
 import { localizePopup, localizationMap } from '../config/localization';
 
@@ -16,6 +16,10 @@ export const WorkPromise = {
                 return work_promise[rjCode];
             }
             work_promise[rjCode] = DLsite.getWorkRequestPromise(rjCode);
+            // Clear memory cache after 10 minutes to prevent memory leaks and allow network retries
+            setTimeout(() => {
+                delete work_promise[rjCode];
+            }, 600000);
             return work_promise[rjCode];
         },
 
@@ -24,11 +28,9 @@ export const WorkPromise = {
                 const data = await WorkPromise.getWorkPromise(rjCode).api2;
                 if (data && data.product_id !== undefined) return true;
 
-                //否则再次检查api1
                 const api = await WorkPromise.getWorkPromise(rjCode).api;
                 return api && api.is_sale !== undefined;
             } catch (e) {
-                //说明是网络问题，删除缓存并返回true
                 delete work_promise[rjCode];
                 return true;
             }
@@ -63,7 +65,6 @@ export const WorkPromise = {
             if (data.sex_category && data.sex_category === 2) return true;
             if (data.site_id === "girls") return true;
 
-            //否则再次检查api1
             data = await WorkPromise.getWorkPromise(rjCode).api;
             WorkPromise.checkNotNull(data.is_girls)
             return data.is_girls;
@@ -96,7 +97,6 @@ export const WorkPromise = {
             let data = await p.api;
             if (data.rate_average_2dp) return data.rate_average_2dp;
 
-            //还可以累加api2的结果获得
             data = await p.api2;
             this.checkNotNull(data.rate_count_detail);
             let sum = 0;
@@ -115,7 +115,6 @@ export const WorkPromise = {
             let data = await p.api;
             if (data.rate_count) return data.rate_count;
 
-            //还可以累加api2的结果获得
             data = await p.api2;
             this.checkNotNull(data.rate_count_detail);
             let count = 0;
@@ -134,7 +133,6 @@ export const WorkPromise = {
 
     getPriceText: async function (rjCode) {
             const p = WorkPromise.getWorkPromise(rjCode);
-            //TODO: 价格以后再加，还要考虑汇率和添加设置项
         },
 
     getBonus: async function (rjCode) {
@@ -161,7 +159,6 @@ export const WorkPromise = {
         },
 
     getLanguages: async function (rjCode) {
-            //返回字符串数组，根据popup设置的语言返回支持的语言列表
             const p = WorkPromise.getWorkPromise(rjCode);
             let api = await p.api2;
             api = api.options ? api : await p.api;
@@ -175,7 +172,6 @@ export const WorkPromise = {
         },
 
     getFileFormats: async function (rjCode) {
-            //返回字符串数组，返回文件格式列表
             const result = [];
             const p = WorkPromise.getWorkPromise(rjCode);
             let api = await p.api2;
@@ -198,7 +194,6 @@ export const WorkPromise = {
         },
 
     getAIUsedText: async function (rjCode) {
-            //返回是否使用或部分使用AI，根据popup语言返回字符串。
             const p = WorkPromise.getWorkPromise(rjCode);
             let api = await p.api2;
             api = api.options ? api : await p.api;
@@ -225,13 +220,6 @@ export const WorkPromise = {
 
     getWorkCategory: async function (rjCode) {
             const type = await WorkPromise.getWorkType(rjCode);
-            /* voice: 音声
-             * game: 游戏
-             * manga: 漫画/插画/音声漫画
-             * video: 视频
-             * novel: 小说
-             * other: 其它
-            */
             switch (type) {
                 case 0:
                     return "voice";
@@ -354,7 +342,6 @@ export const WorkPromise = {
     getCircle: async function (rjCode, findOriginal = true) {
             let trans = await WorkPromise.getTranslationInfo(rjCode);
             if (!trans.is_original && findOriginal) {
-                //使用原作RJ号开始寻找，如果找不到翻译信息就没办法了
                 rjCode = trans.original_workno ? trans.original_workno : rjCode;
             }
 
@@ -390,7 +377,6 @@ export const WorkPromise = {
             if (info && !info.is_announce && info.date) return [info.date.trim(), false];
             if (info && info.is_announce && info.dateAnnounce) return [info.dateAnnounce.trim(), true];
 
-            //从api中查找发售时间
             let api = await p.api2;
             api = api.regist_date ? api : await p.api;
             WorkPromise.checkNotNull(api.regist_date)
@@ -422,7 +408,6 @@ export const WorkPromise = {
                 return api2.creaters.voice_by.map(v => v.name);
             }
 
-            //无法获取api2则直接通过html获取
             const info = await WorkPromise.getWorkPromise(rjCode).info;
             WorkPromise.checkNotNull(info.cv);
             return info.cv;
@@ -435,21 +420,18 @@ export const WorkPromise = {
                 return api2.creaters.music_by.map(v => v.name);
             }
 
-            //无法获取api2则直接通过html获取
             const info = await WorkPromise.getWorkPromise(rjCode).info;
             WorkPromise.checkNotNull(info.music);
             return info.music;
         },
 
     getTags: async function (rjCode) {
-            //注意该方法返回字符串数组而不是纯字符串
             const p = WorkPromise.getWorkPromise(rjCode);
             const api2 = await p.api2;
             if (api2.genres && api2.genres.length > 0) {
                 return api2.genres.map(genre => genre.name);
             }
 
-            //无法获取api2时通过html获取
             const info = await p.info;
             WorkPromise.checkNotNull(info.tags);
             return info.tags;
@@ -468,8 +450,6 @@ export const WorkPromise = {
     getFileSize: async function (rjCode) {
             const trans = await WorkPromise.getTranslationInfo(rjCode);
             if (trans.is_parent) {
-                //翻译版本的父级没有内容信息，自然无法显示文件大小，所以需要获得原作品的大小信息
-                //Child和Original都有各自的大小信息，正常获取计算即可
                 rjCode = trans.original_workno ? trans.original_workno : rjCode;
             }
 
@@ -479,7 +459,6 @@ export const WorkPromise = {
                 return WorkPromise.getFileSizeStr(api2.contents_file_size);
             }
 
-            //通过html获取
             let info = trans.is_child && trans.original_workno ? await WorkPromise.getWorkPromise(trans.original_workno).info : await p.info;
             if (info.filesize) return info.filesize;
 

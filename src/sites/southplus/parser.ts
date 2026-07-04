@@ -1,5 +1,5 @@
-import { URL_REGEX, VOICELINK_IGNORED_CLASS, RJCODE_ATTRIBUTE, VOICELINK_CLASS, RJ_REGEX } from '../config/constants';
-import { Popup } from '../ui/popup';
+import { URL_REGEX, VOICELINK_IGNORED_CLASS, RJCODE_ATTRIBUTE, VOICELINK_CLASS, RJ_REGEX } from '../../config/constants';
+import { Popup } from './popup';
 
 export const Parser = {
     walkNodes: function (elem: Node) {
@@ -89,13 +89,15 @@ export const Parser = {
         e.style.color = "#f472b6"; // Sakura pink
         
         // Add hover effect via listeners because it's inline styled
-        e.addEventListener("mouseenter", () => {
+        e.addEventListener("mouseenter", (evt) => {
             e.style.backgroundColor = "rgba(244, 114, 182, 0.15)";
             e.style.borderBottomColor = "rgba(244, 114, 182, 1)";
+            Popup.mouseenter(evt);
         });
-        e.addEventListener("mouseleave", () => {
+        e.addEventListener("mouseleave", (evt) => {
             e.style.backgroundColor = "rgba(244, 114, 182, 0.05)";
             e.style.borderBottomColor = "rgba(244, 114, 182, 0.7)";
+            Popup.mouseleave(evt);
         });
 
         e.setAttribute(RJCODE_ATTRIBUTE, rjCode.toUpperCase());
@@ -133,13 +135,15 @@ export const Parser = {
         e.style.padding = "1px 3px";
         e.style.transition = "background-color 0.2s, border-bottom-color 0.2s";
         e.style.color = "#f472b6"; // Sakura pink
-        e.addEventListener("mouseenter", () => {
+        e.addEventListener("mouseenter", (evt) => {
             e.style.backgroundColor = "rgba(244, 114, 182, 0.15)";
             e.style.borderBottomColor = "rgba(244, 114, 182, 1)";
+            Popup.mouseenter(evt);
         });
-        e.addEventListener("mouseleave", () => {
+        e.addEventListener("mouseleave", (evt) => {
             e.style.backgroundColor = "rgba(244, 114, 182, 0.05)";
             e.style.borderBottomColor = "rgba(244, 114, 182, 0.7)";
+            Popup.mouseleave(evt);
         });
 
         e.addEventListener("click", Popup.click);
@@ -210,11 +214,15 @@ export const Parser = {
     rebindEvents: function (elem: HTMLElement) {
         if (elem.nodeName === "A") {
             elem.addEventListener("click", Popup.click);
+            elem.addEventListener("mouseenter", Popup.mouseenter);
+            elem.addEventListener("mouseleave", Popup.mouseleave);
         } else {
             const voicelinks = elem.querySelectorAll("." + VOICELINK_CLASS);
             for (let i = 0, j = voicelinks.length; i < j; i++) {
                 const voicelink = voicelinks[i] as HTMLElement;
                 voicelink.addEventListener("click", Popup.click);
+                voicelink.addEventListener("mouseenter", Popup.mouseenter);
+                voicelink.addEventListener("mouseleave", Popup.mouseleave);
             }
         }
     },

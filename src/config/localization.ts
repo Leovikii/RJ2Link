@@ -1,4 +1,4 @@
-import { Popup } from '../ui/popup';
+import { Popup } from '../sites/southplus/popup';
 
 export const localizationMap = {
     rj_warp_gate_title: {
@@ -30,6 +30,26 @@ export const localizationMap = {
         zh_CN: "年龄指定",
         zh_TW: "年齡指定",
         en_US: "Age Rating"
+    },
+    error_form_not_found: {
+        zh_CN: "无法获取搜索表单，请检查是否已登录南+账号。",
+        zh_TW: "無法獲取搜索表單，請檢查是否已登錄南+帳號。",
+        en_US: "Failed to get search form. Please check if you are logged in to South+."
+    },
+    error_no_results: {
+        zh_CN: "未获取到结果数据，可能是账号未登录或南+开启了防DDoS验证。",
+        zh_TW: "未獲取到結果數據，可能是帳號未登錄或南+開啟了防DDoS驗證。",
+        en_US: "Failed to fetch results. You might not be logged in, or South+ DDoS protection is active."
+    },
+    search_failed: {
+        zh_CN: "检索失败",
+        zh_TW: "檢索失敗",
+        en_US: "Search failed"
+    },
+    click_to_retry: {
+        zh_CN: "点击重试",
+        zh_TW: "點擊重試",
+        en_US: "click to retry"
     },
 
 

@@ -1,26 +1,24 @@
 <template>
-  <Transition name="fade">
-    <div 
-      v-if="state.display"
-      ref="popupRef" 
-      class="rj-warp-gate-popup"
-      :class="[isGirls ? 'theme-girls' : 'theme-maniax']"
-      :style="[positionStyle, dynamicHeight ? { height: dynamicHeight + 'px' } : {}]"
-    >
-      <div class="popup-close-btn" @click="closePopup">✕</div>
-
-      <div class="popup-inner-wrapper" ref="innerWrapperRef">
-        <div v-if="loading" class="popup-skeleton">
+  <PopupPanel
+    :display="state.display"
+    :theme="isGirls ? 'girls' : 'maniax'"
+    :positionStyle="positionStyle"
+    :title="state.rjCode.toUpperCase()"
+    transformOrigin="top left"
+    @close="closePopup"
+  >
+    <div v-if="loading" class="popup-skeleton">
         <div class="skeleton-header">
-          <div class="skeleton-eyebrow shimmer"></div>
           <div class="skeleton-title shimmer"></div>
           <div class="skeleton-title short shimmer"></div>
         </div>
         <div class="skeleton-panels">
           <div class="skeleton-left">
             <div class="skeleton-cover shimmer"></div>
-            <div class="skeleton-btn shimmer"></div>
-            <div class="skeleton-btn shimmer"></div>
+            <div class="skeleton-buttons-container">
+              <div class="skeleton-btn shimmer"></div>
+              <div class="skeleton-btn shimmer"></div>
+            </div>
           </div>
           <div class="skeleton-right">
             <div class="skeleton-row">
@@ -64,7 +62,6 @@
       <div v-else class="popup-content">
         <div class="popup-header">
           <div class="header-main">
-            <div class="rj-eyebrow" :title="copyHint" @click.stop="onCopyRjCode">{{ state.rjCode.toUpperCase() }}</div>
             <div class="work-title" :title="titleHint" @click="onCopyTitle">
               {{ title || 'Loading...' }}
             </div>
@@ -75,15 +72,15 @@
           <!-- Left Panel: Cover Image and DLsite Link -->
           <div class="panel-left">
             <div class="dlsite-cover-container">
-              <CoverImage :src="imgLink" />
+              <Cover :src="imgLink" :alt="title" />
             </div>
             <div class="buttons-container">
-              <LinkButton 
+              <ActionButton 
                 :href="'https://www.dlsite.com/maniax/work/=/product_id/' + state.rjCode.toUpperCase() + '.html'"
                 theme="dlsite"
               />
               
-              <LinkButton 
+              <ActionButton 
                 :href="asmrOneUrl"
                 :disabled="!asmrOneUrl"
                 theme="asmrone"
@@ -103,55 +100,50 @@
             <div class="tags-section" v-if="sales || ratingAvg > 0 || releaseDate || ageRating || workType || fileSize">
               <div class="section-title">基础信息</div>
               <div class="tags-flow">
-                <CapsuleTag v-if="sales" theme="sales" :text="`售出: ${sales}`" />
-                <CapsuleTag v-if="ratingAvg > 0" theme="rating" :text="`评价: ${ratingAvg.toFixed(2)}★ (${ratingCount})`" />
-                <CapsuleTag v-if="releaseDate" theme="basic" :text="releaseDate" />
-                <CapsuleTag v-if="ageRating" :theme="ageRating.includes('18') ? 'r18' : 'basic'" :text="ageRating" />
-                <CapsuleTag v-if="workType" :theme="workTypeId >= 0 ? `type-${workTypeId}` : 'basic'" :text="workType" />
-                <CapsuleTag v-if="fileSize" theme="basic" :text="fileSize" />
+                <Badge v-if="sales" theme="sales" :text="`售出: ${sales}`" />
+                <Badge v-if="ratingAvg > 0" theme="rating" :text="`评价: ${ratingAvg.toFixed(2)}★ (${ratingCount})`" />
+                <Badge v-if="releaseDate" theme="basic" :text="releaseDate" />
+                <Badge v-if="ageRating" :theme="ageRating.includes('18') ? 'r18' : 'basic'" :text="ageRating" />
+                <Badge v-if="workType" :theme="workTypeId >= 0 ? `type-${workTypeId}` : 'basic'" :text="workType" />
+                <Badge v-if="fileSize" theme="basic" :text="fileSize" />
               </div>
             </div>
 
             <div class="tags-section" v-if="cv.length">
               <div class="section-title">声优</div>
               <div class="tags-flow">
-                <CapsuleTag v-for="actor in cv" :key="actor" theme="cv" :text="actor" />
+                <Badge v-for="actor in cv" :key="actor" theme="cv" :text="actor" />
               </div>
             </div>
 
             <div class="tags-section" v-if="genreTags.length">
               <div class="section-title">分类</div>
               <div class="tags-flow">
-                <CapsuleTag v-for="tag in genreTags" :key="tag" theme="genre" :text="tag" />
+                <Badge v-for="tag in genreTags" :key="tag" theme="genre" :text="tag" />
               </div>
             </div>
           </div>
         </div>
-        </div>
       </div>
-    </div>
-  </Transition>
+  </PopupPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import type { PopupState } from '../types';
-import { WorkPromise } from '../core/scraper';
-import { localizePopup, localizationMap } from '../config/localization';
-import { VOICELINK_CLASS } from '../config/constants';
+import { ref, watch, computed, toRefs } from 'vue';
+import type { PopupState } from '../../types';
+import { WorkPromise } from '../../common/scraper';
+import { localizePopup, localizationMap } from '../../config/localization';
+import { usePopupPosition } from '../../core/usePopupPosition';
+import { VOICELINK_CLASS } from '../../config/constants';
 
-import CoverImage from './components/CoverImage.vue';
-import LinkButton from './components/LinkButton.vue';
-import CapsuleTag from './components/CapsuleTag.vue';
+import Cover from '../../ui/Cover.vue';
+import ActionButton from '../../ui/ActionButton.vue';
+import Badge from '../../ui/Badge.vue';
+import PopupPanel from '../../ui/PopupPanel.vue';
 
 const props = defineProps<{
   state: PopupState;
 }>();
-
-const popupRef = ref<HTMLElement | null>(null);
-const innerWrapperRef = ref<HTMLElement | null>(null);
-const dynamicHeight = ref<number | null>(null);
-let resizeObserver: ResizeObserver | null = null;
 
 // State variables
 const workFound = ref(true);
@@ -175,42 +167,12 @@ const asmrOneUrl = ref<string | null>(null);
 const titleHint = computed(() => localizePopup(localizationMap.click_to_copy_title));
 const copyHint = computed(() => localizePopup(localizationMap.click_to_copy));
 
-// Calculate position based on mouse click coordinates
-const positionStyle = computed(() => {
-  // Use fixed positioning relative to viewport
-  // Fallback widths
-  const width = 650;
-  const height = 400; // estimated
-  
-  let left = props.state.x + 15;
-  let top = props.state.y + 15;
-  
-  // Keep within bounds
-  if (typeof window !== 'undefined') {
-    if (left + width > window.innerWidth) {
-      left = props.state.x - width - 15;
-      if (left < 0) left = 10;
-    }
-    
-    // Vertical flip (Option 1): if it might hit bottom, flip it to show ABOVE the cursor
-    const estimatedMaxHeight = 550; // Increased to account for many tags
-    if (top + estimatedMaxHeight > window.innerHeight) {
-      // Flip up above the mouse
-      top = props.state.y - estimatedMaxHeight - 15;
-      
-      // If flipping up causes it to hit the top of the screen, clamp it to top
-      if (top < 0) top = 10;
-    }
-  }
-  
-  return {
-    left: `${left}px`,
-    top: `${top}px`
-  };
-});
+const { x, y } = toRefs(props.state);
+const positionStyle = usePopupPosition(x, y, 650, 550);
 
 const closePopup = () => {
   props.state.display = false;
+  props.state.pinned = false;
 };
 
 const onCopyTitle = (e: MouseEvent) => {
@@ -301,99 +263,11 @@ watch(() => props.state.rjCode, (newVal) => {
 watch(() => props.state.display, (newVal) => {
   if (newVal) {
     updatePopupData();
-    nextTick(() => {
-      if (innerWrapperRef.value) {
-        if (!resizeObserver) {
-          resizeObserver = new ResizeObserver((entries) => {
-            window.requestAnimationFrame(() => {
-              for (const entry of entries) {
-                dynamicHeight.value = (entry.target as HTMLElement).offsetHeight + 32;
-              }
-            });
-          });
-        }
-        resizeObserver.observe(innerWrapperRef.value);
-      }
-    });
-  } else {
-    if (resizeObserver) {
-      resizeObserver.disconnect();
-      resizeObserver = null;
-    }
-    dynamicHeight.value = null;
   }
 });
 </script>
 
 <style scoped>
-.rj-warp-gate-popup {
-  position: fixed;
-  z-index: 2147483646;
-  width: 650px;
-  max-width: 90vw;
-  min-height: 250px;
-  max-height: 85vh;
-  
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  color: #f1f5f9;
-  
-  background-color: rgba(30, 30, 30, 0.85); /* Dark translucent background */
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 10px rgba(0, 0, 0, 0.2);
-  
-  padding: 16px;
-  box-sizing: border-box;
-  
-  display: flex;
-  flex-direction: column;
-  pointer-events: auto; /* Allow mouse interaction within the popup */
-  user-select: text;    /* Allow text selection */
-  transition: height 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  overflow: hidden;
-}
-
-.popup-inner-wrapper {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.theme-maniax {
-  border-top: 2px solid rgba(236, 72, 153, 0.4);
-}
-
-.theme-girls {
-  border-top: 2px solid rgba(249, 115, 22, 0.4);
-}
-
-.popup-close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  z-index: 10;
-  transition: all 0.2s ease;
-}
-
-.popup-close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
-}
-
 .popup-content {
   display: flex;
   flex-direction: column;
@@ -405,7 +279,6 @@ watch(() => props.state.display, (newVal) => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-right: 24px;
 }
 
 .header-main {
@@ -435,12 +308,11 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .work-title {
-  font-size: 1.4em;
+  font-size: 1.15em;
   font-weight: 700;
   line-height: 1.3;
   cursor: pointer;
   transition: color 0.2s;
-  padding-right: 20px; /* Space for close btn */
   flex: 1;
 }
 
@@ -453,7 +325,7 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .panel-left {
-  flex: 0 0 240px;
+  flex: 0 0 210px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -462,13 +334,13 @@ watch(() => props.state.display, (newVal) => {
 .buttons-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-height: 86px; /* Space for 2 buttons to prevent reflow */
 }
 
 .dlsite-cover-container {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
 .panel-right {
@@ -506,7 +378,7 @@ watch(() => props.state.display, (newVal) => {
 
 .tags-section {
   display: flex;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .section-title {
@@ -535,22 +407,14 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-header {
-  margin-bottom: 16px;
-}
-
-.skeleton-eyebrow {
-  width: 80px;
-  height: 22px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
 }
 
 .skeleton-title {
   width: 90%;
-  height: 21px;
+  height: 18px;
   border-radius: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -565,8 +429,8 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-left {
-  flex: 0 0 240px;
-  width: 240px;
+  flex: 0 0 210px;
+  width: 210px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -574,9 +438,15 @@ watch(() => props.state.display, (newVal) => {
 
 .skeleton-cover {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 4/3;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.skeleton-buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .skeleton-btn {
@@ -590,7 +460,7 @@ watch(() => props.state.display, (newVal) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .skeleton-row {
@@ -598,11 +468,11 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-label {
-  width: 60px;
+  width: 65px;
   height: 20px;
   border-radius: 4px;
-  margin-top: 5px;
-  margin-right: 12px;
+  margin-top: 4px;
+  margin-right: 0;
   background: rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
@@ -616,16 +486,16 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-tags {
-  flex: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  flex: 1;
 }
 
 .skeleton-tag {
-  height: 26px;
+  height: 24px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .shimmer {
@@ -681,31 +551,80 @@ watch(() => props.state.display, (newVal) => {
   border-radius: 4px;
 }
 
-/* Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  transform-origin: top left;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-@media screen and (max-width: 600px) {
-  .popup-content {
-    flex-direction: column;
+@media screen and (max-width: 768px) {
+  .popup-header {
+    padding-right: 0;
   }
-  .panel-left {
+  .work-title {
+    font-size: 1.1em;
+    padding-right: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .header-main {
+    gap: 4px;
+  }
+  .panel-container, .skeleton-panels {
+    flex-direction: column;
+    overflow-y: auto;
+    gap: 12px;
+  }
+  .panel-left, .skeleton-left {
     flex: 0 0 auto;
     width: 100%;
-    margin-bottom: 16px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
   }
-  .rj-warp-gate-popup {
-    width: 95vw;
-    left: 2.5vw !important;
+  .dlsite-cover-container, .skeleton-cover {
+    /* Prioritize cover size */
+    width: 38%;
+    min-width: 110px;
+    max-width: 160px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+  .skeleton-cover {
+    aspect-ratio: 4/3;
+  }
+  .buttons-container, .skeleton-buttons-container {
+    /* flex: 1 ensures it dynamically takes up the remaining horizontal space after the cover */
+    flex: 1;
+    min-height: auto;
+    gap: 8px;
+    /* Stretch buttons to fill this dynamic container completely */
+    align-items: stretch;
+  }
+  /* Wrapper for skeleton buttons on mobile so they stack vertically inside the remaining space */
+  .skeleton-left .skeleton-btn {
+    height: 32px;
+  }
+  .tags-section {
+    margin-bottom: 4px;
+    align-items: center; /* keep title aligned with compressed tags */
+  }
+  .section-title {
+    font-size: 0.85em;
+    margin-top: 2px;
+    width: 55px;
+  }
+  .tags-flow {
+    gap: 3px;
+  }
+  
+  .skeleton-right {
+    gap: 4px;
+  }
+  .skeleton-label {
+    width: 55px;
+    margin-top: 2px;
+  }
+  .skeleton-tags {
+    gap: 3px;
   }
 }
 </style>

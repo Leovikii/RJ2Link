@@ -110,11 +110,29 @@ defineProps<{
 }
 
 .rj-warp-gate-link-btn.is-disabled .icon-wrapper {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .rj-warp-gate-link-btn.is-disabled .action-icon {
   color: rgba(255, 255, 255, 0.2);
+}
+
+@media screen and (max-width: 768px) {
+  .rj-warp-gate-link-btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+  }
+  .site-logo {
+    height: 18px;
+  }
+  .icon-wrapper {
+    width: 24px;
+    height: 24px;
+  }
+  .action-icon {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 /* --- Theme: DLsite --- */
