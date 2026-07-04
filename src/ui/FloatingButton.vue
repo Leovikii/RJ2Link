@@ -176,6 +176,10 @@ function onDragEnd(e: MouseEvent | TouchEvent) {
   isTransitioning.value = true;
   clampPosition();
   
+  if (typeof GM_setValue !== 'undefined' && window.innerWidth <= 768) {
+    GM_setValue('rj_warp_gate_fab_pos_mobile', JSON.stringify(fabPos.value));
+  }
+  
   setTimeout(() => {
     isTransitioning.value = false;
   }, 300);
@@ -197,6 +201,19 @@ function onMouseLeave(e: MouseEvent) {
 
 onMounted(() => {
   window.addEventListener('resize', clampPosition);
+  
+  if (typeof GM_getValue !== 'undefined' && window.innerWidth <= 768) {
+    const saved = GM_getValue('rj_warp_gate_fab_pos_mobile', null);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          fabPos.value = parsed;
+          setTimeout(clampPosition, 0);
+        }
+      } catch (e) {}
+    }
+  }
 });
 
 onUnmounted(() => {
