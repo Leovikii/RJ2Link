@@ -226,10 +226,13 @@ watch(() => props.display, (newVal) => {
 }
 
 /* Transitions */
-.fade-enter-active,
+.fade-enter-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
 .fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  /* Removed fixed transform-origin to allow dynamic prop or default centering */
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
 }
 
 .fade-enter-from,

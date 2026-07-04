@@ -90,9 +90,11 @@ export const Popup = {
         if (!rjCode) return;
 
         Popup.makePopup(true);
+        if (popupState.rjCode !== rjCode) {
+            popupState.x = e.clientX;
+            popupState.y = e.clientY;
+        }
         popupState.rjCode = rjCode;
-        popupState.x = e.clientX;
-        popupState.y = e.clientY;
         popupState.pinned = true;
     },
 

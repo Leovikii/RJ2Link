@@ -174,8 +174,9 @@ const positionStyle = computed(() => {
   const width = 650;
   const height = 400; // estimated
   
-  let left = props.state.x + 15;
-  let top = props.state.y + 15;
+  let left: number | string = props.state.x + 15;
+  let top: number | string = props.state.y + 15;
+  let bottom: number | string = 'auto';
   
   // Keep within bounds
   if (typeof window !== 'undefined') {
@@ -184,20 +185,18 @@ const positionStyle = computed(() => {
       if (left < 0) left = 10;
     }
     
-    // Vertical flip (Option 1): if it might hit bottom, flip it to show ABOVE the cursor
+    // Vertical flip: if it might hit bottom, set bottom edge relative to cursor
     const estimatedMaxHeight = 550; // Increased to account for many tags
     if (top + estimatedMaxHeight > window.innerHeight) {
-      // Flip up above the mouse
-      top = props.state.y - estimatedMaxHeight - 15;
-      
-      // If flipping up causes it to hit the top of the screen, clamp it to top
-      if (top < 0) top = 10;
+      top = 'auto';
+      bottom = window.innerHeight - props.state.y + 15;
     }
   }
   
   return {
     left: `${left}px`,
-    top: `${top}px`
+    top: top === 'auto' ? 'auto' : `${top}px`,
+    bottom: bottom === 'auto' ? 'auto' : `${bottom}px`
   };
 });
 

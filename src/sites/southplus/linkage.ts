@@ -2,20 +2,26 @@ import { getHttpAsync } from '../../utils/common';
 import { DataCacheStorage } from '../../utils/cache';
 import { WorkPromise } from '../../common/scraper';
 
-export function mergeLinkage(l1, l2) {
-            let linkage = {}
+export class SearchWorkInfo {
+    constructor(public workno: string, public type: string, public lang: string) {}
+}
+
+const DEFAULT_LANGS = ["CHI_HANS", "CHI_HANT", "CHI"]; // Fallback languages if settings is undefined
+
+export function mergeLinkage(l1: Record<string, any>, l2: Record<string, any>) {
+            let linkage: Record<string, any> = {}
             for (const work of Object.values(l1)) {
-                if (!work.workno) continue;
-                linkage[work.workno] = work;
+                if (!work || !(work as any).workno) continue;
+                linkage[(work as any).workno] = work;
             }
             for (const work of Object.values(l2)) {
-                if (!work.workno) continue;
-                linkage[work.workno] = work;
+                if (!work || !(work as any).workno) continue;
+                linkage[(work as any).workno] = work;
             }
             return linkage;
         }
 
-export function cacheLinkage(originalWorkno, linkage) {
+export function cacheLinkage(originalWorkno: string, linkage: Record<string, any>) {
 
             function getExpireTime() {
                 const now = new Date();
@@ -31,7 +37,7 @@ export function cacheLinkage(originalWorkno, linkage) {
             let linkCache = DataCacheStorage.open(
                 "work-linkages", maxLinkMapSize, true, true, true);
 
-            let langs = settings._ss_cue_lang.join();
+            let langs = (typeof (window as any).settings !== 'undefined' ? (window as any).settings._ss_cue_lang : DEFAULT_LANGS).join();
             let data = linkCache.get(originalWorkno);
             if (Array.isArray(data)) {
                 data = mergeLinkage(data, linkage);
@@ -41,8 +47,9 @@ export function cacheLinkage(originalWorkno, linkage) {
             linkCache.commit(`${originalWorkno}|${langs}`, data, getExpireTime());
         }
 
-export function getLinkageFromCache(originalWorkno) {
-            const hashKey = `${originalWorkno}|${settings._ss_cue_lang.join()}`
+export function getLinkageFromCache(originalWorkno: string) {
+            const langs = (typeof (window as any).settings !== 'undefined' ? (window as any).settings._ss_cue_lang : DEFAULT_LANGS).join();
+            const hashKey = `${originalWorkno}|${langs}`;
             let storage = DataCacheStorage.open("work-linkages", 128, true, true, true);
             return storage.get(hashKey);
         }
@@ -102,7 +109,8 @@ export async function getLinkedWorksFull(rjCode, useCache = true, saveCache = tr
             let languageEditions = api.language_editions;
             if (!Array.isArray(languageEditions)) languageEditions = Object.values(languageEditions);
             for (let edition of languageEditions) {
-                if (!settings._ss_cue_lang.includes(edition.lang)) continue;
+                const cueLang = typeof (window as any).settings !== 'undefined' ? (window as any).settings._ss_cue_lang : DEFAULT_LANGS;
+                if (!cueLang.includes(edition.lang)) continue;
                 result = mergeLinkage(result, await getLinkedWorks(edition.workno));
             }
 

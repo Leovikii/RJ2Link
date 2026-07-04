@@ -41,6 +41,7 @@
     <!-- FAB Trigger -->
     <div 
       class="fab-trigger" 
+      ref="fabTriggerRef"
       :class="{ 'is-clickable': isClickable, 'is-loading': isLoading, 'is-error': isError }"
       @mousedown="onDragStart"
       @touchstart="onDragStart"
@@ -124,6 +125,7 @@ const props = defineProps<{
 const isExpanded = ref(false);
 const isPinned = ref(false);
 const fabContainerRef = ref<HTMLElement | null>(null);
+const fabTriggerRef = ref<HTMLElement | null>(null);
 
 function handleClickOutside(event: MouseEvent) {
   if (isExpanded.value && fabContainerRef.value && !fabContainerRef.value.contains(event.target as Node)) {
@@ -142,6 +144,8 @@ const isLeftHalf = computed(() => {
 });
 
 const fabStyle = computed(() => {
+  if (window.innerWidth > 768) return {}; // Fixed by CSS on desktop
+
   if (fabPos.value.x !== -1) {
     if (isDragging.value) {
       // While dragging, exactly follow the mouse (left/top)
@@ -152,19 +156,7 @@ const fabStyle = computed(() => {
         right: 'auto'
       };
     } else {
-      // Desktop: Keep exactly where dragged (free floating).
       // Mobile: Edge snapping (no padding, snaps directly to edge).
-      const isMobile = window.innerWidth <= 768;
-      
-      if (!isMobile) {
-        return {
-          left: `${fabPos.value.x}px`,
-          top: `${fabPos.value.y}px`,
-          bottom: 'auto',
-          right: 'auto'
-        };
-      }
-      
       const padding = 0;
       if (isLeftHalf.value) {
         return {
@@ -187,7 +179,6 @@ const fabStyle = computed(() => {
 });
 
 const popupPositionStyle = computed(() => {
-  if (!isExpanded.value) return {};
   if (window.innerWidth <= 768) return {};
 
   const style: Record<string, string> = {};
@@ -196,8 +187,8 @@ const popupPositionStyle = computed(() => {
   let width = 64;
   let height = 48;
 
-  if (fabContainerRef.value) {
-    const rect = fabContainerRef.value.getBoundingClientRect();
+  if (fabTriggerRef.value) {
+    const rect = fabTriggerRef.value.getBoundingClientRect();
     x = rect.left;
     y = rect.top;
     width = rect.width;
@@ -207,20 +198,28 @@ const popupPositionStyle = computed(() => {
     y = window.innerHeight - 100 - height;
   }
 
-  const isLeft = x < window.innerWidth / 2;
-  const isTop = y < window.innerHeight / 2;
+  let popupLeft = x + 15;
+  let popupTop: number | string = y + 15;
+  let popupBottom: number | string = 'auto';
 
-  if (isLeft) {
-    style.left = `${x}px`;
-  } else {
-    style.right = `${window.innerWidth - x - width}px`;
+  // Keep within bounds horizontally
+  if (popupLeft + 650 > window.innerWidth) {
+    // If it goes off the right edge, flip it to the left of the cursor/trigger
+    popupLeft = x - 650 - 15;
+    if (popupLeft < 0) popupLeft = 10;
   }
 
-  if (isTop) {
-    style.top = `${y + height + 16}px`;
-  } else {
-    style.bottom = `${window.innerHeight - y + 16}px`;
+  // Keep within bounds vertically
+  const estimatedMaxHeight = 550;
+  if (y + estimatedMaxHeight > window.innerHeight) {
+    // If it hits the bottom, anchor it from the bottom
+    popupTop = 'auto';
+    popupBottom = window.innerHeight - y + 15;
   }
+
+  style.left = `${popupLeft}px`;
+  if (popupTop !== 'auto') style.top = `${popupTop}px`;
+  if (popupBottom !== 'auto') style.bottom = `${popupBottom}px`;
 
   return style;
 });
@@ -230,8 +229,8 @@ const popupTransformOrigin = computed(() => {
   
   let x = fabPos.value.x;
   let y = fabPos.value.y;
-  if (fabContainerRef.value) {
-    const rect = fabContainerRef.value.getBoundingClientRect();
+  if (fabTriggerRef.value) {
+    const rect = fabTriggerRef.value.getBoundingClientRect();
     x = rect.left;
     y = rect.top;
   } else if (x === -1) {
@@ -242,6 +241,7 @@ const popupTransformOrigin = computed(() => {
   const isLeft = x < window.innerWidth / 2;
   const isTop = y < window.innerHeight / 2;
   
+  // Return transform origin based on the screen quadrant
   return `${isTop ? 'top' : 'bottom'} ${isLeft ? 'left' : 'right'}`;
 });
 
@@ -294,6 +294,8 @@ function clampPosition() {
 }
 
 function onDragStart(e: MouseEvent | TouchEvent) {
+  if (window.innerWidth > 768) return; // Disable dragging on desktop
+
   if (e.type === 'touchstart') {
     lastTouchTime = Date.now();
   } else if (e.type === 'mousedown') {
@@ -498,7 +500,7 @@ function togglePanel() {
 <style scoped>
 .rj-fab-container {
   position: fixed;
-  bottom: 100px;
+  bottom: 120px;
   right: 30px;
   z-index: 2147483647;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -521,13 +523,11 @@ function togglePanel() {
 
 /* FAB Trigger */
 .fab-trigger {
-  background: rgba(30, 30, 30, 0.85);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  background: #242424; /* Solid color */
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 22px;
-  padding: 0 13px;
-  height: 44px;
+  border-radius: 27px;
+  padding: 0 16px;
+  height: 54px;
   display: flex;
   align-items: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -544,7 +544,7 @@ function togglePanel() {
 .fab-trigger.is-clickable:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
-  background: rgba(45, 45, 45, 0.9);
+  background: #2d2d2d;
   border-color: rgba(255, 255, 255, 0.3);
   opacity: 1;
 }
@@ -599,13 +599,13 @@ function togglePanel() {
 
 .sp-text-logo {
   font-weight: 900;
-  font-size: 15px;
+  font-size: 20px;
   letter-spacing: -0.5px;
 }
 
 .badge-icon {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
 }
 
 .spin-icon {
@@ -631,7 +631,7 @@ function togglePanel() {
 }
 
 .badge-text {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1;
 }
@@ -746,21 +746,26 @@ function togglePanel() {
   font-size: 11px;
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 768px) {
   .rj-fab-container {
-    bottom: 100px;
-    right: 16px;
+    bottom: auto;
+    top: 45vh;
+    right: 0;
   }
   .fab-trigger {
-    height: 42px;
-    padding: 6px 14px;
-    border-radius: 24px;
+    height: 44px;
+    padding: 0 13px;
+    border-radius: 22px;
   }
-  .fab-logo {
-    font-size: 18px;
+  .sp-text-logo {
+    font-size: 15px;
   }
-  .fab-status {
-    font-size: 13px;
+  .badge-icon {
+    width: 16px;
+    height: 16px;
+  }
+  .badge-text {
+    font-size: 14px;
   }
   .results-list {
     max-height: 200px;
