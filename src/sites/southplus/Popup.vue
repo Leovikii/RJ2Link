@@ -500,7 +500,7 @@ watch(() => props.state.display, (newVal) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .skeleton-row {
@@ -508,11 +508,11 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-label {
-  width: 60px;
+  width: 65px;
   height: 20px;
   border-radius: 4px;
-  margin-top: 5px;
-  margin-right: 12px;
+  margin-top: 4px;
+  margin-right: 0;
   background: rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
@@ -526,16 +526,16 @@ watch(() => props.state.display, (newVal) => {
 }
 
 .skeleton-tags {
-  flex: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  flex: 1;
 }
 
 .skeleton-tag {
-  height: 26px;
+  height: 24px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .shimmer {
@@ -653,6 +653,17 @@ watch(() => props.state.display, (newVal) => {
     width: 55px;
   }
   .tags-flow {
+    gap: 3px;
+  }
+  
+  .skeleton-right {
+    gap: 4px;
+  }
+  .skeleton-label {
+    width: 55px;
+    margin-top: 2px;
+  }
+  .skeleton-tags {
     gap: 3px;
   }
 }

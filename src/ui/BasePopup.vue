@@ -267,14 +267,14 @@ watch(() => props.display, (newVal) => {
   .rj-warp-gate-popup.is-centered {
     top: auto !important;
     left: 0 !important;
-    transform: none !important;
+    transform: none;
   }
   
   /* Slide up animation for mobile */
   .fade-enter-from,
   .fade-leave-to {
     opacity: 0;
-    transform: translateY(100%);
+    transform: translateY(100%) !important;
   }
   .fade-enter-active,
   .fade-leave-active {
