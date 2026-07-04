@@ -3,6 +3,7 @@
     :display="state.display"
     :theme="isGirls ? 'girls' : 'maniax'"
     :positionStyle="positionStyle"
+    transformOrigin="top left"
     @close="closePopup"
   >
     <div v-if="loading" class="popup-skeleton">

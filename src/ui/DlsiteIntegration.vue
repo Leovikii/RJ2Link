@@ -2,12 +2,15 @@
   <div class="rj-fab-container" 
        :class="{ 'is-expanded': isExpanded, 'is-left-half': isLeftHalf, 'is-transitioning': isTransitioning }" 
        :style="fabStyle"
-       ref="fabContainerRef">
+       ref="fabContainerRef"
+       @mouseenter="onContainerMouseEnter"
+       @mouseleave="onContainerMouseLeave">
     
     <!-- Expanded Modal -->
     <BasePopup
       :display="isExpanded"
       theme="default"
+      :transformOrigin="isLeftHalf ? 'bottom left' : 'bottom right'"
       @close="isExpanded = false"
     >
       <div class="panel-body">
@@ -115,6 +118,28 @@ const fabStyle = computed(() => {
   return {};
 });
 
+let hoverTimer: number | null = null;
+
+function onContainerMouseEnter() {
+  if (window.innerWidth <= 768) return;
+  if (hoverTimer) {
+    clearTimeout(hoverTimer);
+    hoverTimer = null;
+  }
+  if (!isDragging && isClickable.value && !isExpanded.value) {
+    isExpanded.value = true;
+  }
+}
+
+function onContainerMouseLeave() {
+  if (window.innerWidth <= 768) return;
+  if (isExpanded.value) {
+    hoverTimer = window.setTimeout(() => {
+      isExpanded.value = false;
+    }, 300);
+  }
+}
+
 let dragStartX = 0;
 let dragStartY = 0;
 let initialFabX = 0;
@@ -217,7 +242,7 @@ function onDragEnd() {
     if (fabContainerRef.value) {
       isTransitioning.value = true;
       const rect = fabContainerRef.value.getBoundingClientRect();
-      const padding = window.innerWidth <= 600 ? 16 : 30; // Mobile vs desktop padding
+      const padding = window.innerWidth <= 768 ? 0 : 30; // Snap exactly to edge on mobile
       
       const snapX = isLeftHalf.value ? padding : window.innerWidth - rect.width - padding;
       fabPos.value.x = snapX;
@@ -319,6 +344,14 @@ function togglePanel() {
   align-items: flex-end;
 }
 
+@media screen and (max-width: 768px) {
+  .rj-fab-container {
+    bottom: auto;
+    top: 45vh;
+    right: 0;
+  }
+}
+
 .rj-fab-container.is-transitioning {
   transition: left 0.3s cubic-bezier(0.25, 1, 0.5, 1), top 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -355,6 +388,24 @@ function togglePanel() {
 
 .fab-trigger.is-clickable:active {
   transform: translateY(0) scale(0.98);
+}
+
+@media screen and (max-width: 768px) {
+  .rj-fab-container:not(.is-expanded) .fab-trigger {
+    transform: translateX(18px); /* Half hide into the right edge */
+    opacity: 0.5;
+  }
+  
+  .rj-fab-container:not(.is-expanded).is-left-half .fab-trigger {
+    transform: translateX(-18px); /* Half hide into the left edge */
+  }
+  
+  .rj-fab-container:not(.is-expanded) .fab-trigger:active,
+  .rj-fab-container:not(.is-expanded) .fab-trigger.is-loading,
+  .rj-fab-container:not(.is-expanded) .fab-trigger.is-error {
+    transform: translateX(0); /* Reveal fully when interacting */
+    opacity: 1;
+  }
 }
 
 .fab-content {

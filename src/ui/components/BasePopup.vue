@@ -5,7 +5,7 @@
       ref="popupRef" 
       class="rj-warp-gate-popup"
       :class="[`theme-${theme}`, { 'is-centered': isCentered, 'is-mobile-expanded': isExpandedMobile }]"
-      :style="[positionStyle, (dynamicHeight && !isMobile) ? { height: dynamicHeight + 'px' } : {}]"
+      :style="[positionStyle, (dynamicHeight && !isMobile) ? { height: dynamicHeight + 'px' } : {}, transformOrigin ? { transformOrigin } : {}]"
       @touchstart="onTouchStart"
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
@@ -29,6 +29,7 @@ const props = withDefaults(defineProps<{
   display: boolean;
   theme?: 'maniax' | 'girls' | 'default';
   positionStyle?: Record<string, any>;
+  transformOrigin?: string;
 }>(), {
   theme: 'default',
   positionStyle: () => ({})
@@ -228,7 +229,7 @@ watch(() => props.display, (newVal) => {
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.25s ease, transform 0.25s ease;
-  transform-origin: top left;
+  /* Removed fixed transform-origin to allow dynamic prop or default centering */
 }
 
 .fade-enter-from,
@@ -253,7 +254,7 @@ watch(() => props.display, (newVal) => {
     top: auto !important;
     bottom: 0 !important;
     border-radius: 20px 20px 0 0;
-    max-height: 60vh !important;
+    max-height: 50vh !important;
     padding: 16px 12px;
     padding-bottom: max(16px, env(safe-area-bottom));
     transition: max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);

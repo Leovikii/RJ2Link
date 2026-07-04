@@ -15,6 +15,7 @@ export const popupState = reactive<PopupState>({
 
 let popupApp: App<Element> | null = null;
 let popupMountPoint: HTMLElement | null = null;
+let hideTimer: number | null = null;
 
 export const Popup = {
     makePopup(display = false) {
@@ -53,6 +54,23 @@ export const Popup = {
                 // Otherwise close
                 popupState.display = false;
             });
+            
+            // Handle hovering over the popup itself to keep it open
+            popupMountPoint.style.pointerEvents = 'auto'; // allow mouse events on the popup content
+            popupMountPoint.addEventListener('mouseenter', () => {
+                if (hideTimer) {
+                    window.clearTimeout(hideTimer);
+                    hideTimer = null;
+                }
+            });
+            popupMountPoint.addEventListener('mouseleave', () => {
+                // If it's not mobile, start hide timer
+                if (window.innerWidth > 768) {
+                    hideTimer = window.setTimeout(() => {
+                        popupState.display = false;
+                    }, 300);
+                }
+            });
         }
         popupState.display = display !== false;
     },
@@ -71,5 +89,33 @@ export const Popup = {
         popupState.rjCode = rjCode;
         popupState.x = e.clientX;
         popupState.y = e.clientY;
+    },
+
+    mouseenter(e: MouseEvent) {
+        if (window.innerWidth <= 768) return; // Desktop only
+        
+        if (hideTimer) {
+            window.clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+
+        const target = isInDLSite() ? e.target as HTMLElement : getVoiceLinkTarget(e.target as HTMLElement);
+        if (!target || !target.classList.contains(VOICELINK_CLASS)) return;
+
+        const rjCode = target.getAttribute(RJCODE_ATTRIBUTE);
+        if (!rjCode) return;
+
+        Popup.makePopup(true);
+        popupState.rjCode = rjCode;
+        popupState.x = e.clientX;
+        popupState.y = e.clientY;
+    },
+
+    mouseleave(e: MouseEvent) {
+        if (window.innerWidth <= 768) return; // Desktop only
+        
+        hideTimer = window.setTimeout(() => {
+            popupState.display = false;
+        }, 300);
     }
 };
