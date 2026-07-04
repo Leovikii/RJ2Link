@@ -69,12 +69,12 @@ import { VOICELINK_CLASS } from '../config/constants';
         return (typeof GM !== "undefined" && GM !== null ? GM.xmlHttpRequest : GM_xmlhttpRequest);
     }
 
-    export function getHttpAsync(url, anonymous = false, cacheAge = 0, customHeaders = {}) {
+    export function getHttpAsync(url, anonymous = false, cacheAge = 0, customHeaders = {}): Promise<any> {
         let headers = { ...customHeaders };
         headers["Accept"] = "text/xml";
         headers["User-Agent"] = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:67.0)";
         headers["Cache-Control"] = cacheAge <= 0 ? "no-cache" : "max-age=" + cacheAge;
-        return new Promise((resolve, reject) => {
+        return new Promise<any>((resolve, reject) => {
             getXmlHttpRequest()({
                 method: "GET",
                 url,

@@ -104,9 +104,8 @@ export async function getCirclePromise(rjCode, apiPromise) {
                 data = data ? data : {};
                 if (resp.readyState === 4 && resp.status === 200) {
                     let doc = new DOMParser().parseFromString(Csp.createHTML(resp.responseText), "text/html");
-                    let name = doc.querySelector("strong.prof_maker_name");
-                    name = name ? name.innerText : null;
-                    data.name = name;
+                    let nameElement = doc.querySelector("strong.prof_maker_name");
+                    data.name = nameElement ? (nameElement as HTMLElement).innerText : null;
                 }
             }
 
