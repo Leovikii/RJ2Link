@@ -16,6 +16,10 @@ export const WorkPromise = {
                 return work_promise[rjCode];
             }
             work_promise[rjCode] = DLsite.getWorkRequestPromise(rjCode);
+            // Clear memory cache after 10 minutes to prevent memory leaks and allow network retries
+            setTimeout(() => {
+                delete work_promise[rjCode];
+            }, 600000);
             return work_promise[rjCode];
         },
 

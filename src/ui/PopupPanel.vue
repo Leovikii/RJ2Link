@@ -56,7 +56,7 @@ function checkMobile() {
 
 onMounted(() => {
   checkMobile();
-  window.addEventListener('resize', checkMobile);
+  window.addEventListener('resize', checkMobile, { passive: true });
 });
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile);

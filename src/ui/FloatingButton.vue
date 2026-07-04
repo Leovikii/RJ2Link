@@ -200,7 +200,7 @@ function onMouseLeave(e: MouseEvent) {
 }
 
 onMounted(() => {
-  window.addEventListener('resize', clampPosition);
+  window.addEventListener('resize', clampPosition, { passive: true });
   
   if (typeof GM_getValue !== 'undefined' && window.innerWidth <= 768) {
     const saved = GM_getValue('rj_warp_gate_fab_pos_mobile', null);

@@ -3,6 +3,8 @@
     <img 
       v-if="src" 
       :src="src" 
+      loading="lazy"
+      decoding="async"
       @load="onImageLoad"
       @mouseenter="isHovered = true" 
       @mouseleave="isHovered = false"
