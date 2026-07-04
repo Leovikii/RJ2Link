@@ -14,8 +14,10 @@
         <div class="skeleton-panels">
           <div class="skeleton-left">
             <div class="skeleton-cover shimmer"></div>
-            <div class="skeleton-btn shimmer"></div>
-            <div class="skeleton-btn shimmer"></div>
+            <div class="skeleton-buttons-container">
+              <div class="skeleton-btn shimmer"></div>
+              <div class="skeleton-btn shimmer"></div>
+            </div>
           </div>
           <div class="skeleton-right">
             <div class="skeleton-row">
@@ -480,6 +482,12 @@ watch(() => props.state.display, (newVal) => {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.skeleton-buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .skeleton-btn {
   width: 100%;
   height: 38px;
@@ -582,30 +590,69 @@ watch(() => props.state.display, (newVal) => {
   border-radius: 4px;
 }
 
-@media screen and (max-width: 600px) {
-  .panel-container {
+@media screen and (max-width: 768px) {
+  .popup-header {
+    padding-right: 0;
+  }
+  .work-title {
+    font-size: 1.1em;
+    padding-right: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .header-main {
+    gap: 4px;
+  }
+  .panel-container, .skeleton-panels {
     flex-direction: column;
     overflow-y: auto;
+    gap: 12px;
   }
-  .panel-left {
+  .panel-left, .skeleton-left {
     flex: 0 0 auto;
     width: 100%;
     flex-direction: row;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 4px;
   }
-  .dlsite-cover-container {
-    width: 110px;
+  .dlsite-cover-container, .skeleton-cover {
+    /* Prioritize cover size */
+    width: 38%;
+    min-width: 110px;
+    max-width: 160px;
     flex-shrink: 0;
     margin-bottom: 0;
   }
-  .buttons-container {
+  .skeleton-cover {
+    aspect-ratio: 4/3;
+  }
+  .buttons-container, .skeleton-buttons-container {
+    /* flex: 1 ensures it dynamically takes up the remaining horizontal space after the cover */
     flex: 1;
     min-height: auto;
+    gap: 8px;
+    /* Stretch buttons to fill this dynamic container completely */
+    align-items: stretch;
   }
-  .panel-right {
-    overflow-y: visible;
+  /* Wrapper for skeleton buttons on mobile so they stack vertically inside the remaining space */
+  .skeleton-left .skeleton-btn {
+    height: 32px;
+  }
+  .tags-section {
+    margin-bottom: 4px;
+    align-items: center; /* keep title aligned with compressed tags */
+  }
+  .section-title {
+    font-size: 0.85em;
+    margin-top: 2px;
+    width: 55px;
+  }
+  .tags-flow {
+    gap: 3px;
   }
 }
 </style>

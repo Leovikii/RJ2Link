@@ -29,19 +29,20 @@ const isHovered = ref(false);
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 100%;
-  min-height: 150px;
+  /* Removed height: 100% and min-height to allow tight wrapping of image */
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .rj-warp-gate-img-container img {
-  max-width: 100%;
+  width: 100%;
+  height: auto;
   max-height: 350px;
-  object-fit: contain;
+  object-fit: cover; /* fill the container */
   border-radius: 8px;
   transition: transform 0.3s ease;
+  display: block; /* prevent phantom margins */
 }
 
 .rj-warp-gate-img-container img.is-hovered {

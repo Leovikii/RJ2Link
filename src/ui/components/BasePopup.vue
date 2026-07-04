@@ -4,9 +4,15 @@
       v-if="display"
       ref="popupRef" 
       class="rj-warp-gate-popup"
-      :class="[`theme-${theme}`, { 'is-centered': isCentered }]"
-      :style="[positionStyle, dynamicHeight ? { height: dynamicHeight + 'px' } : {}]"
+      :class="[`theme-${theme}`, { 'is-centered': isCentered, 'is-mobile-expanded': isExpandedMobile }]"
+      :style="[positionStyle, (dynamicHeight && !isMobile) ? { height: dynamicHeight + 'px' } : {}]"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
     >
+      <div class="popup-drag-handle">
+        <div class="drag-pill"></div>
+      </div>
       <div class="popup-close-btn" @click="$emit('close')">✕</div>
 
       <div class="popup-inner-wrapper" ref="innerWrapperRef">
@@ -17,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue';
 
 const props = withDefaults(defineProps<{
   display: boolean;
@@ -39,8 +45,64 @@ const innerWrapperRef = ref<HTMLElement | null>(null);
 const dynamicHeight = ref<number | null>(null);
 let resizeObserver: ResizeObserver | null = null;
 
+const isMobile = ref(false);
+const isExpandedMobile = ref(false);
+
+function checkMobile() {
+  // Use 768px to cover wider mobile devices like tablets/foldables elegantly
+  isMobile.value = window.innerWidth <= 768;
+}
+
+onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+});
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile);
+});
+
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isDraggingHandle = false;
+
+function onTouchStart(e: TouchEvent) {
+  if (!isMobile.value) return;
+  const target = e.target as HTMLElement;
+  const isHandle = target.closest('.popup-drag-handle');
+  const scrollContainer = target.closest('.popup-inner-wrapper, .panel-right, .results-list');
+  const isAtTop = scrollContainer ? scrollContainer.scrollTop <= 0 : true;
+
+  if (isHandle || isAtTop) {
+    touchStartY = e.touches[0].clientY;
+    touchCurrentY = touchStartY;
+    isDraggingHandle = true;
+  }
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!isDraggingHandle) return;
+  touchCurrentY = e.touches[0].clientY;
+}
+
+function onTouchEnd() {
+  if (!isDraggingHandle) return;
+  isDraggingHandle = false;
+  const dy = touchCurrentY - touchStartY;
+  
+  if (dy > 50) {
+    if (isExpandedMobile.value) {
+      isExpandedMobile.value = false;
+    } else {
+      emit('close');
+    }
+  } else if (dy < -50) {
+    isExpandedMobile.value = true;
+  }
+}
+
 watch(() => props.display, (newVal) => {
   if (newVal) {
+    isExpandedMobile.value = false; // Reset on open
     nextTick(() => {
       if (innerWrapperRef.value) {
         if (!resizeObserver) {
@@ -144,6 +206,24 @@ watch(() => props.display, (newVal) => {
   transform: scale(1.1);
 }
 
+.popup-drag-handle {
+  display: none;
+  width: 100%;
+  height: 20px;
+  justify-content: center;
+  align-items: center;
+  margin-top: -8px;
+  margin-bottom: 8px;
+  cursor: grab;
+}
+
+.drag-pill {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
 /* Transitions */
 .fade-enter-active,
 .fade-leave-active {
@@ -157,15 +237,30 @@ watch(() => props.display, (newVal) => {
   transform: scale(0.95);
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 768px) {
+  .popup-close-btn {
+    display: none;
+  }
+  
+  .popup-drag-handle {
+    display: flex;
+  }
+  
   .rj-warp-gate-popup {
-    width: 100vw !important;
+    width: 100% !important;
+    max-width: 100% !important;
     left: 0 !important;
     top: auto !important;
     bottom: 0 !important;
     border-radius: 20px 20px 0 0;
-    max-height: 85vh !important;
+    max-height: 60vh !important;
+    padding: 16px 12px;
     padding-bottom: max(16px, env(safe-area-bottom));
+    transition: max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  
+  .rj-warp-gate-popup.is-mobile-expanded {
+    max-height: 90vh !important;
   }
   
   .rj-warp-gate-popup.is-centered {
