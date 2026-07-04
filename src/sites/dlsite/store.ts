@@ -2,37 +2,56 @@ import { ref } from 'vue';
 import { searchSouthPlus, cleanupCache, SouthPlusSearchResult } from '../southplus/search';
 import { WorkPromise } from '../../common/scraper';
 
-export const isLoading = ref(true);
-export const isError = ref(false);
-export const errorMessage = ref('');
+export const isSpLoading = ref(true);
+export const isAsmrLoading = ref(true);
+export const spErrorMsg = ref('');
+export const asmrErrorMsg = ref('');
 export const asmrOneUrl = ref<string | null>(null);
 export const results = ref<SouthPlusSearchResult[]>([]);
 export const spState = ref<'empty' | 'results' | 'error' | 'loading'>('loading');
+export const asmrState = ref<'empty' | 'results' | 'error' | 'loading'>('loading');
 
 export async function fetchDLsiteData(rjCode: string, force = false) {
   if (force) {
-    cleanupCache(); // cleanupCache doesn't take args
+    cleanupCache();
   }
   
-  isLoading.value = true;
-  isError.value = false;
+  isSpLoading.value = true;
+  isAsmrLoading.value = true;
   spState.value = 'loading';
-  errorMessage.value = '';
+  asmrState.value = 'loading';
+  spErrorMsg.value = '';
+  asmrErrorMsg.value = '';
+  results.value = [];
+  asmrOneUrl.value = null;
 
-  try {
-    const searchRes = await searchSouthPlus(rjCode);
+  // Run searches in parallel without blocking each other
+  const spPromise = searchSouthPlus(rjCode).then(searchRes => {
     results.value = searchRes.results || [];
-    spState.value = results.value.length > 0 ? 'results' : 'empty';
-
-    // WorkPromise is an object, checkAsmrOne is the method
-    const asmrUrl = await WorkPromise.checkAsmrOne(rjCode);
-    asmrOneUrl.value = asmrUrl || null;
-  } catch (err: any) {
-    isError.value = true;
+    if (!searchRes.success && searchRes.errorMsg) {
+      spState.value = 'error';
+      spErrorMsg.value = searchRes.errorMsg;
+    } else {
+      spState.value = results.value.length > 0 ? 'results' : 'empty';
+    }
+  }).catch(err => {
     spState.value = 'error';
-    errorMessage.value = err?.message || String(err);
-    console.error('[RJ Warp Gate] Fetch failed:', err);
-  } finally {
-    isLoading.value = false;
-  }
+    spErrorMsg.value = err?.message || String(err);
+    console.error('[RJ Warp Gate] SouthPlus Fetch failed:', err);
+  }).finally(() => {
+    isSpLoading.value = false;
+  });
+
+  const asmrPromise = WorkPromise.checkAsmrOne(rjCode).then(asmrUrl => {
+    asmrOneUrl.value = asmrUrl || null;
+    asmrState.value = asmrUrl ? 'results' : 'empty';
+  }).catch(err => {
+    asmrState.value = 'error';
+    asmrErrorMsg.value = err?.message || String(err);
+    console.error('[RJ Warp Gate] ASMRone Fetch failed:', err);
+  }).finally(() => {
+    isAsmrLoading.value = false;
+  });
+
+  await Promise.allSettled([spPromise, asmrPromise]);
 }

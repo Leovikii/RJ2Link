@@ -8,24 +8,58 @@
   >
     <div class="panel-body">
       <!-- ASMR ONE Button -->
+      <template v-if="isAsmrLoading">
+        <div class="skeleton-btn"></div>
+      </template>
       <ActionButton 
-        v-if="asmrOneUrl"
+        v-else-if="asmrOneUrl"
         theme="asmrone"
         :href="asmrOneUrl"
         :title="t.asmrOne"
       />
 
       <!-- South Plus Results -->
-      <div class="southplus-section" v-if="results.length > 0">
-        <div class="sp-header"><span class="sp-text-logo">SP</span> {{ t.spResources }} ({{ results.length }})</div>
-        <ul class="results-list">
-          <li v-for="(result, index) in results" :key="index">
-            <a :href="result.url" target="_blank" class="result-link">
-              <span class="result-title">{{ result.title }}</span>
-              <span class="result-meta" v-if="result.author">{{ result.author }} · {{ result.date }}</span>
-            </a>
-          </li>
-        </ul>
+      <div class="southplus-section">
+        <div class="sp-header">
+          <span class="sp-text-logo">SP</span> {{ t.spResources }}
+          <span v-if="!isSpLoading && results.length > 0">({{ results.length }})</span>
+        </div>
+        
+        <template v-if="isSpLoading">
+          <ul class="results-list">
+             <li v-for="i in 2" :key="i">
+                <div class="skeleton-result">
+                  <div class="skeleton-line title"></div>
+                  <div class="skeleton-line meta"></div>
+                </div>
+             </li>
+          </ul>
+        </template>
+        
+        <template v-else-if="spState === 'error'">
+           <div class="sp-error-box">
+             <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+             <div class="error-text">
+               <div class="error-title">检索失败</div>
+               <div class="error-desc">{{ getSpErrorText(spErrorMsg) }}</div>
+             </div>
+           </div>
+        </template>
+
+        <template v-else-if="results.length > 0">
+          <ul class="results-list">
+            <li v-for="(result, index) in results" :key="index">
+              <a :href="result.url" target="_blank" class="result-link">
+                <span class="result-title">{{ result.title }}</span>
+                <span class="result-meta" v-if="result.author">{{ result.author }} · {{ result.date }}</span>
+              </a>
+            </li>
+          </ul>
+        </template>
+        
+        <template v-else>
+           <div class="sp-empty">未找到相关资源</div>
+        </template>
       </div>
     </div>
   </PopupPanel>
@@ -38,7 +72,7 @@ import PopupPanel from '../../ui/PopupPanel.vue';
 import ActionButton from '../../ui/ActionButton.vue';
 import { usePopupPosition } from '../../core/usePopupPosition';
 import { localize } from '../../config/localization';
-import { asmrOneUrl, results, fetchDLsiteData } from './store';
+import { isSpLoading, isAsmrLoading, spState, spErrorMsg, asmrOneUrl, results, fetchDLsiteData } from './store';
 
 const props = defineProps<{
   state: PopupState;
@@ -47,6 +81,14 @@ const props = defineProps<{
 const t = {
   spResources: localize('southplus_resources'),
   asmrOne: localize('go_to_asmrone'),
+};
+
+const getSpErrorText = (msg: string) => {
+  if (msg === 'error_form_not_found') return '未登录南+或论坛结构改变，请检查登录状态。';
+  if (msg === 'error_no_results') return '无权限或触发了论坛的安全防护策略。';
+  if (msg.includes('上次搜索时间') || msg.includes('不能少于')) return '搜索过于频繁，受到论坛限制。';
+  if (msg.includes('Network error')) return '网络连接超时或遭到拦截。';
+  return msg || '未知错误';
 };
 
 // Use the generic position hook (estimated width 350, height 400 for DLsite results)
@@ -151,6 +193,7 @@ watch(() => props.state.rjCode, (newRjCode) => {
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -158,5 +201,94 @@ watch(() => props.state.rjCode, (newRjCode) => {
 .result-meta {
   font-size: 11px;
   color: #9ca3af;
+}
+
+/* Skeleton UI */
+.skeleton-btn {
+  height: 48px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-line {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-line.title { width: 85%; }
+.skeleton-line.meta { width: 40%; height: 11px; margin-top: 4px; }
+
+/* Shimmer animation */
+.skeleton-btn::after, .skeleton-result::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.05) 20%, rgba(255, 255, 255, 0.1) 60%, rgba(255, 255, 255, 0));
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* Error Box */
+.sp-error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #f87171;
+}
+
+.error-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.error-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.error-desc {
+  font-size: 12px;
+  color: #fca5a5;
+  line-height: 1.4;
+}
+
+.sp-empty {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 16px 0;
 }
 </style>

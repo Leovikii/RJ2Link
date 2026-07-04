@@ -1,8 +1,8 @@
 <template>
   <FloatingButton
     :is-clickable="isClickable"
-    :is-loading="isLoading"
-    :is-error="isError"
+    :is-loading="isAllLoading"
+    :is-error="isAllError"
     :is-expanded="popupState.display"
     :class="VOICELINK_CLASS"
     :rjcode="rjCode"
@@ -24,12 +24,12 @@
             <text x="29" y="44" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-weight="900" font-style="italic" font-size="36" fill="#ffffff" text-anchor="middle" letter-spacing="-1">RJ</text>
           </svg>
         </span>
-        <span v-if="isLoading" class="status-badge rj-loading">
+        <span v-if="isAllLoading" class="status-badge rj-loading">
           <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
           </svg>
         </span>
-        <span v-else-if="isError" class="status-badge rj-error" :title="errorMessage ? `${errorMessage} (${t.clickToRetry})` : `${t.searchFailed} (${t.clickToRetry})`">
+        <span v-else-if="isAllError" class="status-badge rj-error" :title="`${spErrorMsg || asmrErrorMsg || t.searchFailed} (${t.clickToRetry})`">
           <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -37,7 +37,7 @@
           </svg>
         </span>
         <template v-else>
-          <span v-if="!hasAnyResource" class="status-badge rj-empty" :title="t.clickToRetry">
+          <span v-if="isAllEmptyOrError" class="status-badge rj-empty" :title="t.clickToRetry">
             <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -45,6 +45,11 @@
             <span class="badge-text">{{ t.noResource }}</span>
           </span>
           <template v-else>
+            <span v-if="isAnyLoading" class="status-badge rj-loading" title="还在努力检索中...">
+              <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+              </svg>
+            </span>
             <span v-if="asmrOneUrl" class="status-badge rj-asmr" title="ASMRone 可用">
               <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
@@ -68,7 +73,10 @@ import FloatingButton from '../../ui/FloatingButton.vue';
 import { VOICELINK_CLASS } from '../../config/constants';
 import { localize } from '../../config/localization';
 import { popupManager, popupState } from './popup';
-import { isLoading, isError, errorMessage, asmrOneUrl, results, spState, fetchDLsiteData } from './store';
+import { 
+  isSpLoading, isAsmrLoading, spErrorMsg, asmrErrorMsg, 
+  asmrOneUrl, results, spState, asmrState, fetchDLsiteData 
+} from './store';
 
 const props = defineProps<{
   rjCode: string;
@@ -80,11 +88,16 @@ const t = {
   clickToRetry: localize('click_to_retry'),
 };
 
+const isAnyLoading = computed(() => isSpLoading.value || isAsmrLoading.value);
+const isAllLoading = computed(() => isSpLoading.value && isAsmrLoading.value);
 const hasAnyResource = computed(() => asmrOneUrl.value !== null || results.value.length > 0);
-const isClickable = computed(() => !isLoading.value && (hasAnyResource.value || isError.value || spState.value === 'empty'));
+const isAllError = computed(() => spState.value === 'error' && asmrState.value === 'error');
+const isAllEmptyOrError = computed(() => !isAnyLoading.value && !hasAnyResource.value);
+
+const isClickable = computed(() => !isAllLoading.value);
 
 function onHoverEnter(e: MouseEvent) {
-  if (isClickable.value && !isLoading.value && !isError.value && hasAnyResource.value) {
+  if (isClickable.value && !isAllError.value && !isAllEmptyOrError.value) {
     popupManager.mouseenter(e);
   }
 }
@@ -94,11 +107,13 @@ function onHoverLeave(e: MouseEvent) {
 }
 
 function onClick(e: MouseEvent) {
-  if (isLoading.value) return;
-  if (isError.value || (!hasAnyResource.value && spState.value === 'empty')) {
+  if (isAllLoading.value) return; // Ignore click if everything is still loading
+  
+  if (isAllEmptyOrError.value) {
     fetchDLsiteData(props.rjCode, true); // Force retry bypasses cache
     return;
   }
+  
   if (isClickable.value) {
     popupManager.click(e);
   }
