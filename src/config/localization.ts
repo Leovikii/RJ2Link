@@ -1,4 +1,4 @@
-import { Popup } from '../ui/popup';
+import { Popup } from '../sites/southplus/popup';
 
 export const localizationMap = {
     rj_warp_gate_title: {

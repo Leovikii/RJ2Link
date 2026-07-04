@@ -1,5 +1,5 @@
-import { URL_REGEX, VOICELINK_IGNORED_CLASS, RJCODE_ATTRIBUTE, VOICELINK_CLASS, RJ_REGEX } from '../config/constants';
-import { Popup } from '../ui/popup';
+import { URL_REGEX, VOICELINK_IGNORED_CLASS, RJCODE_ATTRIBUTE, VOICELINK_CLASS, RJ_REGEX } from '../../config/constants';
+import { Popup } from './popup';
 
 export const Parser = {
     walkNodes: function (elem: Node) {

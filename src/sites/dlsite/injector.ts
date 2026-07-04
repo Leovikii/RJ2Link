@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import DlsiteIntegration from '../ui/DlsiteIntegration.vue';
+import DlsiteIntegration from './DlsiteIntegration.vue';
 
 export function initDLSiteInjector() {
   // Extract RJ code from URL

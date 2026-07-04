@@ -131,15 +131,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import type { PopupState } from '../types';
-import { WorkPromise } from '../core/scraper';
-import { localizePopup, localizationMap } from '../config/localization';
-import { VOICELINK_CLASS } from '../config/constants';
+import type { PopupState } from '../../types';
+import { WorkPromise } from '../../common/scraper';
+import { localizePopup, localizationMap } from '../../config/localization';
+import { VOICELINK_CLASS } from '../../config/constants';
 
-import CoverImage from './components/CoverImage.vue';
-import LinkButton from './components/LinkButton.vue';
-import CapsuleTag from './components/CapsuleTag.vue';
-import BasePopup from './components/BasePopup.vue';
+import CoverImage from '../../ui/CoverImage.vue';
+import LinkButton from '../../ui/LinkButton.vue';
+import CapsuleTag from '../../ui/CapsuleTag.vue';
+import BasePopup from '../../ui/BasePopup.vue';
 
 const props = defineProps<{
   state: PopupState;

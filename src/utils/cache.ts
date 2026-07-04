@@ -21,7 +21,7 @@
         get timeUpdate() { return this._timeUpdate; }
         get timeAccess() { return this._timeAccess; }
         get timeExpire() { return this._timeExpire; }
-        get hasExpired() { return this._timeExpire > 0 && this._timeExpire < Date.now() }  //0代表无过期时间
+        get hasExpired() { return this._timeExpire > 0 && this._timeExpire < Date.now() }
 
         set timeExpire(value) {
             if (typeof value !== "number" || value < 0) return;

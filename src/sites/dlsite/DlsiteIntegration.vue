@@ -70,11 +70,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { searchSouthPlus, SouthPlusSearchResult } from '../core/southplus_search';
-import { WorkPromise } from '../core/scraper';
-import LinkButton from './components/LinkButton.vue';
-import BasePopup from './components/BasePopup.vue';
-import { localize } from '../config/localization';
+import { searchSouthPlus, SouthPlusSearchResult } from '../southplus/search';
+import { WorkPromise } from '../../common/scraper';
+import LinkButton from '../../ui/LinkButton.vue';
+import BasePopup from '../../ui/BasePopup.vue';
+import { localize } from '../../config/localization';
 
 const t = {
   title: localize('rj_warp_gate_title'),

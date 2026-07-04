@@ -1,8 +1,8 @@
 import { createApp, reactive, App } from 'vue';
 import PopupComponent from './Popup.vue';
-import { VOICELINK_CLASS, RJCODE_ATTRIBUTE } from '../config/constants';
-import { getVoiceLinkTarget, isInDLSite, getOS } from '../utils/common';
-import type { PopupState } from '../types';
+import { VOICELINK_CLASS, RJCODE_ATTRIBUTE } from '../../config/constants';
+import { getVoiceLinkTarget, isInDLSite, getOS } from '../../utils/common';
+import type { PopupState } from '../../types';
 
 export const popupState = reactive<PopupState>({
     display: false,

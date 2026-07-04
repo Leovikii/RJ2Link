@@ -1,6 +1,6 @@
-import { getHttpAsync } from '../utils/common';
-import { DataCacheStorage } from '../utils/cache';
-import { WorkPromise } from './scraper';
+import { getHttpAsync } from '../../utils/common';
+import { DataCacheStorage } from '../../utils/cache';
+import { WorkPromise } from '../../common/scraper';
 
 export function mergeLinkage(l1, l2) {
             let linkage = {}
@@ -16,10 +16,8 @@ export function mergeLinkage(l1, l2) {
         }
 
 export function cacheLinkage(originalWorkno, linkage) {
-            //缓存与rjCode相关的关联作品信息，任意一个关联作品RJ均能找到此关联信息
 
             function getExpireTime() {
-                //UTC+9第二天的0点
                 const now = new Date();
                 const nowMs = now.getTime();
                 const utc9Ms = nowMs + now.getTimezoneOffset() * 60000 + 9 * 3600 * 1000;
@@ -33,11 +31,9 @@ export function cacheLinkage(originalWorkno, linkage) {
             let linkCache = DataCacheStorage.open(
                 "work-linkages", maxLinkMapSize, true, true, true);
 
-            //存入Linkage
             let langs = settings._ss_cue_lang.join();
             let data = linkCache.get(originalWorkno);
             if (Array.isArray(data)) {
-                //已存在部分Linkage则合并它们
                 data = mergeLinkage(data, linkage);
             } else {
                 data = linkage;
@@ -65,7 +61,6 @@ export async function getLinkedWorks(rjCode) {
                         result[edition.workno] = { workno: edition.workno, type: "parent", lang: edition.lang };
                     }
                 } else if (trans.is_parent) {
-                    //parent作品可以获取当前语言下所有的作品关联，但无法获取其它语言作品关联，作品数更新时也无法注意到
                     result[trans.original_workno] = { workno: trans.original_workno, type: "original", lang: "JPN" };
                     result[rjCode] = { workno: rjCode, type: "parent", lang: trans.lang };
                     for (let workno of trans.child_worknos) {
@@ -89,14 +84,11 @@ export async function getLinkedWorksFull(rjCode, useCache = true, saveCache = tr
             let trans = await WorkPromise.getTranslationInfo(rjCode);
             if (trans.is_original === undefined || trans.is_original === null) return {};
             if (!trans.is_original) {
-                //TODO 将结果和待搜索RJ号的本地关联搜索结果merge一下再返回（不存缓存，否则会破坏缓存内语言和cue_lang的对应性
-                //TODO 上面那个不算，改成临时添加cue lang，然后方法改成用参数接收cue lang而不是读设置项，缓存那边也要改成参数传递
                 let result = await getLinkedWorksFull(trans.original_workno, useCache, saveCache);
                 result = mergeLinkage(result, await getLinkedWorks(rjCode));
                 return result;
             }
 
-            //先尝试从缓存获取
             let cache = getLinkageFromCache(rjCode)
             if (cache) {
                 return cache;
@@ -111,7 +103,6 @@ export async function getLinkedWorksFull(rjCode, useCache = true, saveCache = tr
             if (!Array.isArray(languageEditions)) languageEditions = Object.values(languageEditions);
             for (let edition of languageEditions) {
                 if (!settings._ss_cue_lang.includes(edition.lang)) continue;
-                //是需要的查询语言，进行Link递归查询
                 result = mergeLinkage(result, await getLinkedWorks(edition.workno));
             }
 
