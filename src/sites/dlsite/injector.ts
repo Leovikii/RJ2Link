@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import FloatingWidget from '../../ui/FloatingWidget.vue';
+import FloatingWidget from './FloatingWidget.vue';
 
 export function initDLSiteInjector() {
   // Extract RJ code from URL

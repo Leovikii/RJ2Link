@@ -130,10 +130,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, watch, computed, toRefs } from 'vue';
 import type { PopupState } from '../../types';
 import { WorkPromise } from '../../common/scraper';
 import { localizePopup, localizationMap } from '../../config/localization';
+import { usePopupPosition } from '../../core/usePopupPosition';
 import { VOICELINK_CLASS } from '../../config/constants';
 
 import Cover from '../../ui/Cover.vue';
@@ -167,38 +168,8 @@ const asmrOneUrl = ref<string | null>(null);
 const titleHint = computed(() => localizePopup(localizationMap.click_to_copy_title));
 const copyHint = computed(() => localizePopup(localizationMap.click_to_copy));
 
-// Calculate position based on mouse click coordinates
-const positionStyle = computed(() => {
-  // Use fixed positioning relative to viewport
-  // Fallback widths
-  const width = 650;
-  const height = 400; // estimated
-  
-  let left: number | string = props.state.x + 15;
-  let top: number | string = props.state.y + 15;
-  let bottom: number | string = 'auto';
-  
-  // Keep within bounds
-  if (typeof window !== 'undefined') {
-    if (left + width > window.innerWidth) {
-      left = props.state.x - width - 15;
-      if (left < 0) left = 10;
-    }
-    
-    // Vertical flip: if it might hit bottom, set bottom edge relative to cursor
-    const estimatedMaxHeight = 550; // Increased to account for many tags
-    if (top + estimatedMaxHeight > window.innerHeight) {
-      top = 'auto';
-      bottom = window.innerHeight - props.state.y + 15;
-    }
-  }
-  
-  return {
-    left: `${left}px`,
-    top: top === 'auto' ? 'auto' : `${top}px`,
-    bottom: bottom === 'auto' ? 'auto' : `${bottom}px`
-  };
-});
+const { x, y } = toRefs(props.state);
+const positionStyle = usePopupPosition(x, y, 650, 550);
 
 const closePopup = () => {
   props.state.display = false;
