@@ -1,44 +1,45 @@
 <template>
-  <div class="rj-fab-container" :class="{ 'is-expanded': isExpanded }" ref="fabContainerRef">
+  <div class="rj-fab-container" 
+       :class="{ 'is-expanded': isExpanded, 'is-left-half': isLeftHalf, 'is-transitioning': isTransitioning }" 
+       :style="fabStyle"
+       ref="fabContainerRef">
     
-    <!-- Expanded Panel -->
-    <transition name="panel-slide">
-      <div v-show="isExpanded" class="fab-panel">
-        <div class="panel-header">
-          <span>{{ t.title }}</span>
-          <button class="close-btn" @click.stop="isExpanded = false">×</button>
-        </div>
-        
-        <div class="panel-body">
-          <!-- ASMR ONE Button -->
-          <LinkButton 
-            v-if="asmrOneUrl"
-            theme="asmrone"
-            :href="asmrOneUrl"
-            :title="t.asmrOne"
-          />
+    <!-- Expanded Modal -->
+    <BasePopup
+      :display="isExpanded"
+      theme="default"
+      @close="isExpanded = false"
+    >
+      <div class="panel-body">
+        <!-- ASMR ONE Button -->
+        <LinkButton 
+          v-if="asmrOneUrl"
+          theme="asmrone"
+          :href="asmrOneUrl"
+          :title="t.asmrOne"
+        />
 
-          <!-- South Plus Results -->
-          <div class="southplus-section" v-if="results.length > 0">
-            <div class="sp-header">🔍 {{ t.spResources }} ({{ results.length }})</div>
-            <ul class="results-list">
-              <li v-for="(result, index) in results" :key="index">
-                <a :href="result.url" target="_blank" class="result-link">
-                  <span class="result-title">{{ result.title }}</span>
-                  <span class="result-meta" v-if="result.author">{{ result.author }} · {{ result.date }}</span>
-                </a>
-              </li>
-            </ul>
-          </div>
+        <!-- South Plus Results -->
+        <div class="southplus-section" v-if="results.length > 0">
+          <div class="sp-header">🔍 {{ t.spResources }} ({{ results.length }})</div>
+          <ul class="results-list">
+            <li v-for="(result, index) in results" :key="index">
+              <a :href="result.url" target="_blank" class="result-link">
+                <span class="result-title">{{ result.title }}</span>
+                <span class="result-meta" v-if="result.author">{{ result.author }} · {{ result.date }}</span>
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
-    </transition>
+    </BasePopup>
 
     <!-- FAB Trigger -->
     <div 
       class="fab-trigger" 
       :class="{ 'is-clickable': isClickable, 'is-loading': isLoading, 'is-error': isError }"
-      @click="togglePanel"
+      @mousedown="onDragStart"
+      @touchstart="onDragStart"
     >
       <div class="fab-content">
         <span class="fab-logo">🪐</span>
@@ -69,6 +70,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { searchSouthPlus, SouthPlusSearchResult } from '../core/southplus_search';
 import { WorkPromise } from '../core/scraper';
 import LinkButton from './components/LinkButton.vue';
+import BasePopup from './components/BasePopup.vue';
 import { localize } from '../config/localization';
 
 const t = {
@@ -89,6 +91,145 @@ const fabContainerRef = ref<HTMLElement | null>(null);
 function handleClickOutside(event: MouseEvent) {
   if (isExpanded.value && fabContainerRef.value && !fabContainerRef.value.contains(event.target as Node)) {
     isExpanded.value = false;
+  }
+}
+
+// Drag & Drop State
+const fabPos = ref({ x: -1, y: -1 });
+const isTransitioning = ref(false);
+
+const isLeftHalf = computed(() => {
+  if (fabPos.value.x === -1) return false;
+  return fabPos.value.x < window.innerWidth / 2;
+});
+
+const fabStyle = computed(() => {
+  if (fabPos.value.x !== -1) {
+    return {
+      left: `${fabPos.value.x}px`,
+      top: `${fabPos.value.y}px`,
+      bottom: 'auto',
+      right: 'auto'
+    };
+  }
+  return {};
+});
+
+let dragStartX = 0;
+let dragStartY = 0;
+let initialFabX = 0;
+let initialFabY = 0;
+let isDragging = false;
+let dragDistance = 0;
+let lastTouchTime = 0;
+
+function clampPosition() {
+  if (fabPos.value.x !== -1) {
+    const fabWidth = fabContainerRef.value ? fabContainerRef.value.offsetWidth : 64;
+    const fabHeight = fabContainerRef.value ? fabContainerRef.value.offsetHeight : 48;
+    
+    const maxX = Math.max(0, window.innerWidth - fabWidth);
+    const maxY = Math.max(0, window.innerHeight - fabHeight);
+    
+    const newX = Math.max(0, Math.min(fabPos.value.x, maxX));
+    const newY = Math.max(0, Math.min(fabPos.value.y, maxY));
+    
+    if (newX !== fabPos.value.x || newY !== fabPos.value.y) {
+      fabPos.value = { x: newX, y: newY };
+    }
+  }
+}
+
+function onDragStart(e: MouseEvent | TouchEvent) {
+  if (e.type === 'touchstart') {
+    lastTouchTime = Date.now();
+  } else if (e.type === 'mousedown') {
+    if (Date.now() - lastTouchTime < 500) return; // Prevent double trigger from emulated mousedown
+    if ((e as MouseEvent).button !== 0) return; // Only left click
+  }
+  
+  isDragging = false;
+  dragDistance = 0;
+  isTransitioning.value = false;
+  
+  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+  const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+  
+  dragStartX = clientX;
+  dragStartY = clientY;
+  
+  if (fabContainerRef.value) {
+    const rect = fabContainerRef.value.getBoundingClientRect();
+    initialFabX = rect.left;
+    initialFabY = rect.top;
+    
+    if (fabPos.value.x === -1) {
+      fabPos.value = { x: rect.left, y: rect.top };
+    }
+  }
+
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('touchmove', onDragMove, { passive: false });
+  window.addEventListener('mouseup', onDragEnd);
+  window.addEventListener('touchend', onDragEnd);
+}
+
+function onDragMove(e: MouseEvent | TouchEvent) {
+  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+  const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+  
+  const dx = clientX - dragStartX;
+  const dy = clientY - dragStartY;
+  
+  dragDistance = Math.sqrt(dx * dx + dy * dy);
+  
+  if (dragDistance > 5) {
+    isDragging = true;
+    if ('touches' in e && e.cancelable) {
+       e.preventDefault();
+    }
+    
+    let newX = initialFabX + dx;
+    let newY = initialFabY + dy;
+    
+    if (fabContainerRef.value) {
+      const rect = fabContainerRef.value.getBoundingClientRect();
+      const maxX = window.innerWidth - rect.width;
+      const maxY = window.innerHeight - rect.height;
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+    }
+    
+    fabPos.value = { x: newX, y: newY };
+  }
+}
+
+function onDragEnd() {
+  window.removeEventListener('mousemove', onDragMove);
+  window.removeEventListener('touchmove', onDragMove);
+  window.removeEventListener('mouseup', onDragEnd);
+  window.removeEventListener('touchend', onDragEnd);
+  
+  if (!isDragging || dragDistance <= 5) {
+    togglePanel();
+  } else {
+    // Snap to edge
+    if (fabContainerRef.value) {
+      isTransitioning.value = true;
+      const rect = fabContainerRef.value.getBoundingClientRect();
+      const padding = window.innerWidth <= 600 ? 16 : 30; // Mobile vs desktop padding
+      
+      const snapX = isLeftHalf.value ? padding : window.innerWidth - rect.width - padding;
+      fabPos.value.x = snapX;
+      
+      if (typeof GM_setValue !== 'undefined') {
+        GM_setValue('rj_warp_gate_fab_pos', JSON.stringify(fabPos.value));
+      }
+      
+      setTimeout(() => {
+        isTransitioning.value = false;
+      }, 300);
+    }
   }
 }
 
@@ -119,6 +260,21 @@ function fetchSouthPlus(force = false) {
 onMounted(async () => {
   // Bind click outside listener
   document.addEventListener('click', handleClickOutside);
+  window.addEventListener('resize', clampPosition);
+
+  // Restore position
+  if (typeof GM_getValue !== 'undefined') {
+    const saved = GM_getValue('rj_warp_gate_fab_pos', null);
+    if (saved) {
+      try {
+        const pos = JSON.parse(saved);
+        if (pos && typeof pos.x === 'number' && pos.x !== -1) {
+          fabPos.value = pos;
+          setTimeout(clampPosition, 50); // Clamp after DOM might be ready
+        }
+      } catch (e) {}
+    }
+  }
 
   // Fire both searches in parallel
   WorkPromise.checkAsmrOne(props.rjCode).then(url => {
@@ -131,6 +287,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('resize', clampPosition);
 });
 
 const isLoading = computed(() => asmrOneState.value === 'loading' || spState.value === 'loading');
@@ -153,13 +310,17 @@ function togglePanel() {
 <style scoped>
 .rj-fab-container {
   position: fixed;
-  bottom: 30px;
+  bottom: 100px;
   right: 30px;
   z-index: 2147483647;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+.rj-fab-container.is-transitioning {
+  transition: left 0.3s cubic-bezier(0.25, 1, 0.5, 1), top 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* FAB Trigger */
@@ -176,17 +337,20 @@ function togglePanel() {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   user-select: none;
+  opacity: 0.65;
 }
 
 .fab-trigger.is-clickable {
   cursor: pointer;
 }
 
+.rj-fab-container.is-expanded .fab-trigger,
 .fab-trigger.is-clickable:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
   background: rgba(45, 45, 45, 0.9);
   border-color: rgba(255, 255, 255, 0.3);
+  opacity: 1;
 }
 
 .fab-trigger.is-clickable:active {
@@ -256,57 +420,6 @@ function togglePanel() {
   0% { opacity: 0.6; }
   50% { opacity: 1; }
   100% { opacity: 0.6; }
-}
-
-/* Expanded Panel */
-.fab-panel {
-  position: absolute;
-  bottom: calc(100% + 16px);
-  right: 0;
-  width: 400px;
-  max-width: 90vw;
-  background-color: rgba(25, 25, 25, 0.95);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 14px;
-  font-weight: 700;
-  color: #f1f5f9;
-  letter-spacing: 0.5px;
-}
-
-.close-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: transparent;
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
 }
 
 .panel-body {
@@ -414,16 +527,24 @@ function togglePanel() {
   font-size: 11px;
 }
 
-/* Animations */
-.panel-slide-enter-active,
-.panel-slide-leave-active {
-  transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  transform-origin: bottom right;
-}
-
-.panel-slide-enter-from,
-.panel-slide-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(10px);
+@media screen and (max-width: 600px) {
+  .rj-fab-container {
+    bottom: 100px;
+    right: 16px;
+  }
+  .fab-trigger {
+    height: 42px;
+    padding: 6px 14px;
+    border-radius: 24px;
+  }
+  .fab-logo {
+    font-size: 18px;
+  }
+  .fab-status {
+    font-size: 13px;
+  }
+  .results-list {
+    max-height: 200px;
+  }
 }
 </style>

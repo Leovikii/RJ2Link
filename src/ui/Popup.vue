@@ -1,16 +1,11 @@
 <template>
-  <Transition name="fade">
-    <div 
-      v-if="state.display"
-      ref="popupRef" 
-      class="rj-warp-gate-popup"
-      :class="[isGirls ? 'theme-girls' : 'theme-maniax']"
-      :style="[positionStyle, dynamicHeight ? { height: dynamicHeight + 'px' } : {}]"
-    >
-      <div class="popup-close-btn" @click="closePopup">✕</div>
-
-      <div class="popup-inner-wrapper" ref="innerWrapperRef">
-        <div v-if="loading" class="popup-skeleton">
+  <BasePopup
+    :display="state.display"
+    :theme="isGirls ? 'girls' : 'maniax'"
+    :positionStyle="positionStyle"
+    @close="closePopup"
+  >
+    <div v-if="loading" class="popup-skeleton">
         <div class="skeleton-header">
           <div class="skeleton-eyebrow shimmer"></div>
           <div class="skeleton-title shimmer"></div>
@@ -127,10 +122,8 @@
             </div>
           </div>
         </div>
-        </div>
       </div>
-    </div>
-  </Transition>
+  </BasePopup>
 </template>
 
 <script setup lang="ts">
@@ -143,15 +136,11 @@ import { VOICELINK_CLASS } from '../config/constants';
 import CoverImage from './components/CoverImage.vue';
 import LinkButton from './components/LinkButton.vue';
 import CapsuleTag from './components/CapsuleTag.vue';
+import BasePopup from './components/BasePopup.vue';
 
 const props = defineProps<{
   state: PopupState;
 }>();
-
-const popupRef = ref<HTMLElement | null>(null);
-const innerWrapperRef = ref<HTMLElement | null>(null);
-const dynamicHeight = ref<number | null>(null);
-let resizeObserver: ResizeObserver | null = null;
 
 // State variables
 const workFound = ref(true);
@@ -301,99 +290,11 @@ watch(() => props.state.rjCode, (newVal) => {
 watch(() => props.state.display, (newVal) => {
   if (newVal) {
     updatePopupData();
-    nextTick(() => {
-      if (innerWrapperRef.value) {
-        if (!resizeObserver) {
-          resizeObserver = new ResizeObserver((entries) => {
-            window.requestAnimationFrame(() => {
-              for (const entry of entries) {
-                dynamicHeight.value = (entry.target as HTMLElement).offsetHeight + 32;
-              }
-            });
-          });
-        }
-        resizeObserver.observe(innerWrapperRef.value);
-      }
-    });
-  } else {
-    if (resizeObserver) {
-      resizeObserver.disconnect();
-      resizeObserver = null;
-    }
-    dynamicHeight.value = null;
   }
 });
 </script>
 
 <style scoped>
-.rj-warp-gate-popup {
-  position: fixed;
-  z-index: 2147483646;
-  width: 650px;
-  max-width: 90vw;
-  min-height: 250px;
-  max-height: 85vh;
-  
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  color: #f1f5f9;
-  
-  background-color: rgba(30, 30, 30, 0.85); /* Dark translucent background */
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 10px rgba(0, 0, 0, 0.2);
-  
-  padding: 16px;
-  box-sizing: border-box;
-  
-  display: flex;
-  flex-direction: column;
-  pointer-events: auto; /* Allow mouse interaction within the popup */
-  user-select: text;    /* Allow text selection */
-  transition: height 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  overflow: hidden;
-}
-
-.popup-inner-wrapper {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.theme-maniax {
-  border-top: 2px solid rgba(236, 72, 153, 0.4);
-}
-
-.theme-girls {
-  border-top: 2px solid rgba(249, 115, 22, 0.4);
-}
-
-.popup-close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  z-index: 10;
-  transition: all 0.2s ease;
-}
-
-.popup-close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
-}
-
 .popup-content {
   display: flex;
   flex-direction: column;
@@ -681,31 +582,30 @@ watch(() => props.state.display, (newVal) => {
   border-radius: 4px;
 }
 
-/* Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  transform-origin: top left;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
 @media screen and (max-width: 600px) {
-  .popup-content {
+  .panel-container {
     flex-direction: column;
+    overflow-y: auto;
   }
   .panel-left {
     flex: 0 0 auto;
     width: 100%;
-    margin-bottom: 16px;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
   }
-  .rj-warp-gate-popup {
-    width: 95vw;
-    left: 2.5vw !important;
+  .dlsite-cover-container {
+    width: 110px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+  .buttons-container {
+    flex: 1;
+    min-height: auto;
+  }
+  .panel-right {
+    overflow-y: visible;
   }
 }
 </style>
