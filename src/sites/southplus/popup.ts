@@ -10,7 +10,8 @@ export const popupState = reactive<PopupState>({
     x: 0,
     y: 0,
     found: true,
-    loading: false
+    loading: false,
+    pinned: false
 });
 
 let popupApp: App<Element> | null = null;
@@ -53,6 +54,7 @@ export const Popup = {
                 
                 // Otherwise close
                 popupState.display = false;
+                popupState.pinned = false;
             });
             
             // Handle hovering over the popup itself to keep it open
@@ -66,6 +68,7 @@ export const Popup = {
             popupMountPoint.addEventListener('mouseleave', () => {
                 // If it's not mobile, start hide timer
                 if (window.innerWidth > 768) {
+                    if (popupState.pinned) return;
                     hideTimer = window.setTimeout(() => {
                         popupState.display = false;
                     }, 300);
@@ -73,6 +76,7 @@ export const Popup = {
             });
         }
         popupState.display = display !== false;
+        if (!display) popupState.pinned = false; // Reset pinned on close
     },
 
     click(e: MouseEvent) {
@@ -89,10 +93,12 @@ export const Popup = {
         popupState.rjCode = rjCode;
         popupState.x = e.clientX;
         popupState.y = e.clientY;
+        popupState.pinned = true;
     },
 
     mouseenter(e: MouseEvent) {
         if (window.innerWidth <= 768) return; // Desktop only
+        if (popupState.pinned) return; // Ignore hover if already pinned
         
         if (hideTimer) {
             window.clearTimeout(hideTimer);
@@ -113,6 +119,7 @@ export const Popup = {
 
     mouseleave(e: MouseEvent) {
         if (window.innerWidth <= 768) return; // Desktop only
+        if (popupState.pinned) return; // Don't hide if pinned
         
         hideTimer = window.setTimeout(() => {
             popupState.display = false;

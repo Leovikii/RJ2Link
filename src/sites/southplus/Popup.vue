@@ -1,5 +1,5 @@
 <template>
-  <BasePopup
+  <PopupPanel
     :display="state.display"
     :theme="isGirls ? 'girls' : 'maniax'"
     :positionStyle="positionStyle"
@@ -73,15 +73,15 @@
           <!-- Left Panel: Cover Image and DLsite Link -->
           <div class="panel-left">
             <div class="dlsite-cover-container">
-              <CoverImage :src="imgLink" />
+              <Cover :src="imgLink" :alt="title" />
             </div>
             <div class="buttons-container">
-              <LinkButton 
+              <ActionButton 
                 :href="'https://www.dlsite.com/maniax/work/=/product_id/' + state.rjCode.toUpperCase() + '.html'"
                 theme="dlsite"
               />
               
-              <LinkButton 
+              <ActionButton 
                 :href="asmrOneUrl"
                 :disabled="!asmrOneUrl"
                 theme="asmrone"
@@ -101,32 +101,32 @@
             <div class="tags-section" v-if="sales || ratingAvg > 0 || releaseDate || ageRating || workType || fileSize">
               <div class="section-title">基础信息</div>
               <div class="tags-flow">
-                <CapsuleTag v-if="sales" theme="sales" :text="`售出: ${sales}`" />
-                <CapsuleTag v-if="ratingAvg > 0" theme="rating" :text="`评价: ${ratingAvg.toFixed(2)}★ (${ratingCount})`" />
-                <CapsuleTag v-if="releaseDate" theme="basic" :text="releaseDate" />
-                <CapsuleTag v-if="ageRating" :theme="ageRating.includes('18') ? 'r18' : 'basic'" :text="ageRating" />
-                <CapsuleTag v-if="workType" :theme="workTypeId >= 0 ? `type-${workTypeId}` : 'basic'" :text="workType" />
-                <CapsuleTag v-if="fileSize" theme="basic" :text="fileSize" />
+                <Badge v-if="sales" theme="sales" :text="`售出: ${sales}`" />
+                <Badge v-if="ratingAvg > 0" theme="rating" :text="`评价: ${ratingAvg.toFixed(2)}★ (${ratingCount})`" />
+                <Badge v-if="releaseDate" theme="basic" :text="releaseDate" />
+                <Badge v-if="ageRating" :theme="ageRating.includes('18') ? 'r18' : 'basic'" :text="ageRating" />
+                <Badge v-if="workType" :theme="workTypeId >= 0 ? `type-${workTypeId}` : 'basic'" :text="workType" />
+                <Badge v-if="fileSize" theme="basic" :text="fileSize" />
               </div>
             </div>
 
             <div class="tags-section" v-if="cv.length">
               <div class="section-title">声优</div>
               <div class="tags-flow">
-                <CapsuleTag v-for="actor in cv" :key="actor" theme="cv" :text="actor" />
+                <Badge v-for="actor in cv" :key="actor" theme="cv" :text="actor" />
               </div>
             </div>
 
             <div class="tags-section" v-if="genreTags.length">
               <div class="section-title">分类</div>
               <div class="tags-flow">
-                <CapsuleTag v-for="tag in genreTags" :key="tag" theme="genre" :text="tag" />
+                <Badge v-for="tag in genreTags" :key="tag" theme="genre" :text="tag" />
               </div>
             </div>
           </div>
         </div>
       </div>
-  </BasePopup>
+  </PopupPanel>
 </template>
 
 <script setup lang="ts">
@@ -136,10 +136,10 @@ import { WorkPromise } from '../../common/scraper';
 import { localizePopup, localizationMap } from '../../config/localization';
 import { VOICELINK_CLASS } from '../../config/constants';
 
-import CoverImage from '../../ui/CoverImage.vue';
-import LinkButton from '../../ui/LinkButton.vue';
-import CapsuleTag from '../../ui/CapsuleTag.vue';
-import BasePopup from '../../ui/BasePopup.vue';
+import Cover from '../../ui/Cover.vue';
+import ActionButton from '../../ui/ActionButton.vue';
+import Badge from '../../ui/Badge.vue';
+import PopupPanel from '../../ui/PopupPanel.vue';
 
 const props = defineProps<{
   state: PopupState;
@@ -203,6 +203,7 @@ const positionStyle = computed(() => {
 
 const closePopup = () => {
   props.state.display = false;
+  props.state.pinned = false;
 };
 
 const onCopyTitle = (e: MouseEvent) => {

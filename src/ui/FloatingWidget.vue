@@ -7,16 +7,16 @@
        @mouseleave="onContainerMouseLeave">
     
     <!-- Expanded Modal -->
-    <BasePopup
+    <PopupPanel
       :display="isExpanded"
       theme="default"
       :transformOrigin="popupTransformOrigin"
       :positionStyle="popupPositionStyle"
-      @close="isExpanded = false"
+      @close="isExpanded = false; isPinned = false"
     >
       <div class="panel-body">
         <!-- ASMR ONE Button -->
-        <LinkButton 
+        <ActionButton 
           v-if="asmrOneUrl"
           theme="asmrone"
           :href="asmrOneUrl"
@@ -36,7 +36,7 @@
           </ul>
         </div>
       </div>
-    </BasePopup>
+    </PopupPanel>
 
     <!-- FAB Trigger -->
     <div 
@@ -101,11 +101,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { searchSouthPlus, cleanupCache, SouthPlusSearchResult } from '../southplus/search';
-import { WorkPromise } from '../../common/scraper';
-import LinkButton from '../../ui/LinkButton.vue';
-import BasePopup from '../../ui/BasePopup.vue';
-import { localize } from '../../config/localization';
+import { searchSouthPlus, cleanupCache, SouthPlusSearchResult } from '../sites/southplus/search';
+import { WorkPromise } from '../common/scraper';
+import ActionButton from './ActionButton.vue';
+import PopupPanel from './PopupPanel.vue';
+import { localize } from '../config/localization';
 
 const t = {
   title: localize('rj_warp_gate_title'),
@@ -122,11 +122,13 @@ const props = defineProps<{
 }>();
 
 const isExpanded = ref(false);
+const isPinned = ref(false);
 const fabContainerRef = ref<HTMLElement | null>(null);
 
 function handleClickOutside(event: MouseEvent) {
   if (isExpanded.value && fabContainerRef.value && !fabContainerRef.value.contains(event.target as Node)) {
     isExpanded.value = false;
+    isPinned.value = false;
   }
 }
 
@@ -258,6 +260,7 @@ function onContainerMouseEnter() {
 
 function onContainerMouseLeave() {
   if (window.innerWidth <= 768) return;
+  if (isPinned.value) return; // Don't close if pinned
   if (isExpanded.value) {
     hoverTimer = window.setTimeout(() => {
       isExpanded.value = false;
@@ -471,16 +474,23 @@ const isClickable = computed(() => !isLoading.value && (hasAnyResource.value || 
 
 function togglePanel() {
   if (isLoading.value) return;
-  
-  // If there's an error, or if there's no resource at all, clicking should force a full retry
   if (isError.value || (!hasAnyResource.value && spState.value === 'empty')) {
     fetchSouthPlus(true); // Force retry bypasses cache
-    // Optionally retry asmrOne here
     return;
   }
-  
   if (isClickable.value) {
-    isExpanded.value = !isExpanded.value;
+    if (window.innerWidth <= 768) {
+      isExpanded.value = !isExpanded.value;
+    } else {
+      // Desktop pinning logic
+      if (!isPinned.value) {
+        isPinned.value = true;
+        isExpanded.value = true;
+      } else {
+        isPinned.value = false;
+        isExpanded.value = false;
+      }
+    }
   }
 }
 </script>

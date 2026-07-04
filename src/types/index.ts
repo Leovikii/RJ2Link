@@ -46,4 +46,5 @@ export interface PopupState {
     y: number;
     found: boolean;
     loading: boolean;
+    pinned?: boolean;
 }
