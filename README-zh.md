@@ -31,3 +31,7 @@
 ## 开发文档
 
 架构设计、开发规范和版本计划已单独收束到 [`docs/`](./docs/README.md)。本 README 继续只面向脚本用户和安装场景。
+
+## 开源许可
+
+Copyright © 2026 Viki。RJ 号折跃门仅采用 [GNU 通用公共许可证第 3 版](./LICENSE)（`GPL-3.0-only`）授权。

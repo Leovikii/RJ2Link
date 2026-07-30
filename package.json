@@ -22,7 +22,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^10.0.1",

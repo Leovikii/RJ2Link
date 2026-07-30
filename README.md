@@ -1,6 +1,6 @@
 # <img src="./assets/icon.svg" width="36" height="36" /> RJ Warp Gate
 
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](./LICENSE)
 
 [🇨🇳 简体中文](./README-zh.md) | [🇭🇰/🇹🇼 繁體中文](./README-zh-TW.md)
 
@@ -33,3 +33,7 @@ First, install a user script manager such as [Tampermonkey](https://www.tampermo
 ## Documentation
 
 Development, architecture, and contribution documentation is maintained separately in [`docs/`](./docs/README.md). This README remains focused on users and installation.
+
+## License
+
+Copyright © 2026 Viki. RJ Warp Gate is licensed under the [GNU General Public License version 3 only](./LICENSE) (`GPL-3.0-only`).

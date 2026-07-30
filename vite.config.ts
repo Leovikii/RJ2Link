@@ -20,7 +20,7 @@ export default defineConfig({
         },
         namespace: 'Leovikii',
         author: 'Leovikii',
-        license: 'MIT',
+        license: 'GPL-3.0-only',
         description: {
           '': 'Injects bidirectional cross-site resource search into South Plus and DLsite, featuring detailed metadata preview cards and one-click redirection to ASMR ONE.',
           'zh': '为南+论坛和 DLsite 注入双向资源检索与高亮功能，提供详尽的元数据预览卡片及 ASMR ONE 在线试听一键跳转。',

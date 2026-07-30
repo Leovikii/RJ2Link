@@ -161,3 +161,4 @@ CI 至少执行 `typecheck`、`test` 和 `build`。文档提交可以跳过完�
 - 版本计划中的任务完成后更新状态和验证记录。
 - 用户可见行为变化必须同步三个语言版本 README。
 - 发布前检查 userscript 的 `homepageURL`、`supportURL` 与 `package.json` 仓库信息保持一致，并清理不再参与构建、测试、文档或人工冒烟验证的旧快照和重复资源。
+- 项目许可证统一使用 SPDX 标识 `GPL-3.0-only`；发布前必须核对根 `LICENSE`、`package.json`、根包 lockfile 字段、userscript `@license` 和三语言 README，且不得改写第三方依赖各自的许可证字段。
