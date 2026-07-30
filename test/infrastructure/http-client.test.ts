@@ -44,7 +44,8 @@ describe('GmHttpClient', () => {
 
     expect(legacy).toHaveBeenCalledOnce();
     expect(modern).not.toHaveBeenCalled();
-    expect(diagnostics.format()).toContain('test.legacy load GET https://example.test/ transport=legacy');
+    expect(diagnostics.hasEntries()).toBe(false);
+    expect(diagnostics.format()).toContain('Entries: 0');
   });
 
   it('records a redacted diagnostic for a failed POST request', async () => {
@@ -69,6 +70,7 @@ describe('GmHttpClient', () => {
     })).rejects.toMatchObject({ kind: 'network' });
 
     const report = diagnostics.format();
+    expect(diagnostics.hasEntries()).toBe(true);
     expect(report).toContain('southplus.search-submit error POST https://example.test/search.php transport=injected');
     expect(report).toContain('status=0');
     expect(report).toContain('readyState');

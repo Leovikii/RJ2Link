@@ -91,12 +91,17 @@ describe('South Plus metadata popup', () => {
 
     await screen.findByText('Test Work');
     await waitFor(() => expect(container.querySelector('.rwg-work__cover-column')).toBeTruthy());
+    expect(screen.getByRole('dialog').classList.contains('rwg-popup--work')).toBe(true);
     const coverColumn = container.querySelector('.rwg-work__cover-column')!;
     expect(coverColumn.querySelectorAll('.rwg-action')).toHaveLength(2);
     expect(screen.getByText('2026-07-25')).toBeTruthy();
     expect(screen.queryByText(/00:00:00/)).toBeNull();
-    expect(container.querySelector('.rwg-badge--voice')?.textContent).toBe('Voice Actor');
-    expect(container.querySelector('.rwg-badge--genre')?.textContent).toBe('Genre Tag');
+    const voiceGroup = container.querySelector('.rwg-badge--voice')?.closest('.rwg-info');
+    const genreGroup = container.querySelector('.rwg-badge--genre')?.closest('.rwg-info');
+    expect(voiceGroup?.firstElementChild?.tagName).toBe('STRONG');
+    expect(voiceGroup?.querySelector('.rwg-badge--voice')?.textContent).toBe('Voice Actor');
+    expect(genreGroup?.firstElementChild?.tagName).toBe('STRONG');
+    expect(genreGroup?.querySelector('.rwg-badge--genre')?.textContent).toBe('Genre Tag');
     resources.dispose();
   });
 });

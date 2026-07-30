@@ -25,14 +25,18 @@ describe('Preact shared components', () => {
 
   it('prevents navigation for a disabled action', () => {
     render(<ActionButton theme="asmrone" href={null} />);
-    const link = screen.getByText('ASMR.one').closest('a')!;
+    const brand = screen.getByText('ASMR.one');
+    const link = brand.closest('a')!;
+    expect(brand.classList.contains('rwg-action__brand')).toBe(true);
     expect(link.getAttribute('href')).toBeNull();
     expect(link.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('renders an enabled action as an external navigation link', () => {
     render(<ActionButton theme="dlsite" href="https://www.dlsite.com/work/example" />);
-    const link = screen.getByText('DLsite').closest('a')!;
+    const brand = screen.getByText('DLsite');
+    const link = brand.closest('a')!;
+    expect(brand.classList.contains('rwg-action__brand')).toBe(true);
     expect(link.getAttribute('href')).toBe('https://www.dlsite.com/work/example');
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('aria-disabled')).toBe('false');

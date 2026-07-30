@@ -6,12 +6,14 @@
 
 **RJ Warp Gate** is a powerful Tampermonkey script that bridges South Plus forums, DLsite, and ASMR ONE. It transforms static RJ codes into an interactive, beautifully designed experience and provides seamless cross-site resource searching.
 
+Project homepage: [GitHub](https://github.com/Leovikii/RJ-Warp-Gate). The userscript metadata also points here for source code, documentation, and releases.
+
 ![RJ Warp Gate Demo](./assets/demo.png)
 
 ## 🌟 Features
 
-- **Metadata Preview Card**: Click any RJ code in the forum to instantly preview DLsite metadata via a viewport-safe card, including cover art, title, voice actors, visually distinct category tags, date-only release information, and sales data.
-- **DLsite Global FAB**: Automatically injected into DLsite work pages; hover or click it to inspect ASMR ONE and South Plus results. The bottom-right control can be dragged, remembers separate desktop and mobile positions, and keeps its result panel attached inside the viewport. Error/empty states, explicit retry, and privacy-safe diagnostics remain available.
+- **Metadata Preview Card**: Click any RJ code in the forum to instantly preview DLsite metadata via a viewport-safe card, including cover art, title, voice actors, visually distinct category tags, date-only release information, and sales data. Its compact mobile layout stays within half the viewport height.
+- **DLsite Global FAB**: Automatically injected into DLsite work pages; hover or click it to inspect ASMR ONE and South Plus results. The bottom-right control uses compact source-status chips, fades in without shifting on hover, can be dragged, remembers separate desktop and mobile positions, and keeps its result panel attached inside the viewport. South Plus searches are queued across tabs to respect the forum cooldown; compact per-source retry controls only rerun the failed/empty source, and privacy-safe diagnostics appear only for actionable network failures.
 - **Dedicated SVG Icon**: The script and floating control share a lightweight, optically centered RJ vector mark that stays crisp at every display scale.
 - **ASMR ONE Integration**: Features a built-in redirection engine with a one-click shortcut to ASMR ONE online streaming pages.
 - **Native Dark Mode**: Includes a built-in dark mode for South Plus forums to ensure a consistent visual experience that perfectly matches the popup UI.

@@ -25,6 +25,7 @@ npm run build
 - `npm run build` 生成 `dist/rj-warp-gate.user.js`。
 - 使用 `npm ci` 验证锁文件，只有明确更新依赖时才运行会修改锁文件的安装命令。
 - v1.3.0 已提供稳定的 typecheck/test/lint/build 命令；交付记录必须写明实际执行结果，不能用 Vite 构建代替类型检查或测试。
+- `test/harness.html` 与 `test/dlsite-harness.html` 是保留的本地浏览器冒烟夹具：运行 `npm run dev` 后分别模拟论坛页和 DLsite 页。它们不属于 Vitest fixture，也不得当作无引用文件删除。
 
 ## 2. TypeScript
 
@@ -58,6 +59,8 @@ npm run build
 - 所有请求必须处理错误、超时和取消。
 - 同查询键的并发请求必须去重。
 - 用户操作优先级高于后台预取；如果用户打开正在预取的 RJ，应提升或复用现有请求，而不是新建请求。
+- South Plus 搜索必须遵循 [跨标签搜索协调规格](features/southplus-search-coordination.md)：按队列串行启动、间隔至少 10.5 秒、等待最长 60 秒且不自动重试。
+- 手动重试只重跑失败或空结果的 Provider，不得重复请求已经成功的独立数据源。
 - 禁止使用无限等待循环；队列和锁必须有最大等待时间。
 - 不记录完整响应正文、认证信息、Cookie 或可能包含隐私的数据。
 
@@ -147,7 +150,7 @@ CI 至少执行 `typecheck`、`test` 和 `build`。文档提交可以跳过完�
 - 生产构建默认关闭 debug 日志。
 - 错误日志包含模块、错误类型和查询键，不输出完整 HTML 或搜索结果正文。
 - 开发日志通过单一 logger 控制，禁止在业务模块散落永久 `console.log`。
-- 真实 GM 网络故障使用容量受限的内存诊断缓冲区；每条记录仅允许包含阶段、请求方式、脱敏后的 origin/path、传输 API、状态和耗时。
+- 真实 GM 网络故障使用最多 12 条的内存诊断缓冲区；只记录网络错误、超时和非 2xx HTTP 响应，每条记录仅允许包含阶段、请求方式、脱敏后的 origin/path、传输 API、状态和耗时。
 - 可复制的诊断信息不得包含 URL 查询参数、请求 headers、POST body、Cookie、认证信息、响应正文或页面内容；缓冲区只存在于当前页面，刷新后清空。
 
 ## 12. 文档与发布
@@ -157,3 +160,4 @@ CI 至少执行 `typecheck`、`test` 和 `build`。文档提交可以跳过完�
 - 尚未上线的功能必须标记目标版本。
 - 版本计划中的任务完成后更新状态和验证记录。
 - 用户可见行为变化必须同步三个语言版本 README。
+- 发布前检查 userscript 的 `homepageURL`、`supportURL` 与 `package.json` 仓库信息保持一致，并清理不再参与构建、测试、文档或人工冒烟验证的旧快照和重复资源。

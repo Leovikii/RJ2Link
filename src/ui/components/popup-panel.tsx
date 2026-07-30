@@ -4,6 +4,7 @@ interface PopupPanelProps {
   display: boolean;
   title?: string;
   theme?: 'maniax' | 'girls' | 'default';
+  className?: string;
   position?: JSX.CSSProperties;
   onClose(): void;
   onMouseEnter?: () => void;
@@ -15,6 +16,7 @@ export function PopupPanel({
   display,
   title,
   theme = 'default',
+  className,
   position,
   onClose,
   onMouseEnter,
@@ -24,7 +26,7 @@ export function PopupPanel({
   if (!display) return null;
   return (
     <section
-      class={`rwg-popup rwg-theme-${theme}`}
+      class={`rwg-popup rwg-theme-${theme}${className ? ` ${className}` : ''}`}
       style={position}
       role="dialog"
       aria-modal="false"
@@ -40,4 +42,3 @@ export function PopupPanel({
     </section>
   );
 }
-

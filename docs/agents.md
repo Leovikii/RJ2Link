@@ -66,3 +66,4 @@
 - South Plus RJ 预取最多选择两个候选，默认串行，并遵循功能规格中的网络条件。
 - 预取只访问 DLsite 元数据端点，不触发 South Plus 搜索、ASMR ONE 查询或图片下载。
 - 用户操作必须优先于预取，并复用同一查询的 in-flight Promise。
+- DLsite 发起的 South Plus 搜索必须遵循跨标签 FIFO、10.5 秒启动间隔、60 秒等待上限和仅手动重试的功能规格。

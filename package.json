@@ -2,6 +2,14 @@
   "name": "rj-warp-gate",
   "version": "1.3.0",
   "description": "UserScript to search for resources",
+  "homepage": "https://github.com/Leovikii/RJ-Warp-Gate",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Leovikii/RJ-Warp-Gate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Leovikii/RJ-Warp-Gate/issues"
+  },
   "main": "dist/rj-warp-gate.user.js",
   "scripts": {
     "dev": "vite",

@@ -28,8 +28,8 @@ export class SouthPlusResourceProvider implements ResourceProvider {
     const domain = await this.storage.get('last_forum_domain', 'www.south-plus.net');
     const key = cacheKeys.southPlus(code, domain);
     return this.queries.query(key, async () => {
-      // The lease also enforces South Plus's minimum start-to-start cooldown, so it expires naturally.
-      await this.limiter.acquire({ leaseMs: 16_000, maxWaitMs: 20_000 });
+      // Cross-tab FIFO coordination keeps search starts beyond the forum's ten-second cooldown.
+      await this.limiter.acquire({ signal: context.signal });
       const searchUrl = `https://${domain}/search.php`;
       const getResponse = assertHttpSuccess(await this.http.request({
         url: searchUrl,

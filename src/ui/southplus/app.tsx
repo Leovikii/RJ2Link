@@ -23,7 +23,7 @@ interface SouthPlusAppProps {
 export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHide }: SouthPlusAppProps) {
   const popupState = useExternalStore(popup);
   const state = useExternalStore(resources);
-  const position = usePopupPosition(popupState.x, popupState.y, 650, 680);
+  const position = usePopupPosition(popupState.x, popupState.y, 580, 520);
   const [titleCopied, setTitleCopied] = useState(false);
   const copyFeedbackTimer = useRef<number | null>(null);
 
@@ -60,6 +60,7 @@ export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHid
       display={popupState.display}
       title={popupState.code ?? 'RJ Warp Gate'}
       theme={work?.isGirls ? 'girls' : 'maniax'}
+      className="rwg-popup--work"
       position={position}
       onClose={() => popup.unpinAndClose()}
       onMouseEnter={cancelHide}

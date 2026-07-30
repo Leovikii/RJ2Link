@@ -44,6 +44,11 @@ export const localizationMap = {
         zh_TW: "檢索失敗",
         en_US: "Search failed"
     },
+    search_queue_timeout: {
+        zh_CN: "南+ 搜索队列繁忙，请稍后手动重试",
+        zh_TW: "南+ 搜尋佇列繁忙，請稍後手動重試",
+        en_US: "The South+ search queue is busy. Please retry manually in a moment."
+    },
     click_to_retry: {
         zh_CN: "点击重试",
         zh_TW: "點擊重試",

@@ -62,10 +62,12 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
     }));
   const results = resourceGroups.flatMap((group) => group.results);
   const asmrUrl = asmr?.status === 'success' ? asmr.data[0]?.url : null;
-  const hasResource = Boolean(asmrUrl || results.length);
   const allDone = resourceEntries.length > 0 && resourceEntries.every(([, resource]) => resource.status !== 'loading');
-  const hasError = resourceEntries.some(([, resource]) => resource.status === 'error');
-  const retryable = allDone && (hasError || !hasResource);
+  const hasDiagnosticError = resourceEntries.some(([, resource]) =>
+    resource.status === 'error'
+    && resource.error.kind !== 'rate-limited'
+    && resource.error.kind !== 'aborted');
+  const asmrRetryable = allDone && (asmr?.status === 'error' || asmr?.status === 'empty');
   const accessibleLabel = loading
     ? `RJ Warp Gate · ${localize('searching')}`
     : `RJ Warp Gate · SP ${results.length}`;
@@ -79,10 +81,10 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
     setOpen((value) => !value);
   };
 
-  const retry = () => {
+  const retry = (providerId: string) => {
     cancelHide();
     setOpen(true);
-    void controller.refresh(code, { work: false });
+    void controller.refresh(code, { work: false, resourceProviderIds: [providerId] });
   };
 
   const copyDiagnostics = async () => {
@@ -119,8 +121,14 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
         aria-label={accessibleLabel}
       >
         <img class="rwg-fab__brand" src={rjWarpGateIcon} alt="" aria-hidden="true" />
-        <strong class="rwg-fab__count">{loading ? '…' : `SP ${results.length}`}</strong>
-        {asmrUrl && <span class="rwg-fab__audio" aria-hidden="true">♫</span>}
+        <span class="rwg-fab__sources" aria-hidden="true">
+          <span class="rwg-fab__source rwg-fab__source--southplus">
+            <span>SP</span><strong>{loading ? '…' : results.length}</strong>
+          </span>
+          {asmrUrl && <span class="rwg-fab__source rwg-fab__source--asmrone">
+            <span>ASMR</span><i class="rwg-fab__status-dot" />
+          </span>}
+        </span>
       </button>
       <PopupPanel
         display={open}
@@ -132,23 +140,45 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
       >
         <div class="rwg-resource-panel">
           {asmr?.status === 'loading' && <span class="rwg-skeleton" />}
-          <ActionButton theme="asmrone" href={asmrUrl} />
+          <div class="rwg-provider-row">
+            <ActionButton theme="asmrone" href={asmrUrl} />
+            {asmrRetryable && <ProviderRetryButton
+              providerName="ASMR ONE"
+              onClick={() => retry('asmr-one')}
+            />}
+          </div>
           {asmr?.status === 'error' && <div class="rwg-status"><strong>ASMR ONE · {localize('search_failed')}</strong><small>{asmr.error.message}</small></div>}
           {resourceGroups.map((group) => <section key={group.providerId}>
-            <h3>{group.providerId === 'southplus' ? localize('southplus_resources') : group.displayName} {group.results.length > 0 && `(${group.results.length})`}</h3>
+            <div class="rwg-provider-heading">
+              <h3>{group.providerId === 'southplus' ? localize('southplus_resources') : group.displayName} {group.results.length > 0 && `(${group.results.length})`}</h3>
+              {allDone && (group.state.status === 'error' || group.state.status === 'empty') && <ProviderRetryButton
+                providerName={group.displayName}
+                onClick={() => retry(group.providerId)}
+              />}
+            </div>
             {group.state.status === 'loading' && <div class="rwg-loading"><span class="rwg-skeleton" /><span class="rwg-skeleton" /></div>}
-            {group.state.status === 'error' && <div class="rwg-status"><strong>{localize('search_failed')}</strong><small>{group.state.error.message}</small></div>}
+            {group.state.status === 'error' && <div class="rwg-status"><strong>{localize('search_failed')}</strong><small>{group.state.error.kind === 'rate-limited' ? localize('search_queue_timeout') : group.state.error.message}</small></div>}
             {group.state.status === 'empty' && <div class="rwg-status">{localize('no_resources')}</div>}
             {group.state.status === 'success' && <ul class="rwg-results">{group.results.map((result) => (
               <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{[result.author, normalizeDateOnly(result.date)].filter(Boolean).join(' ')}</small></a></li>
             ))}</ul>}
           </section>)}
-          {hasError && <button class="rwg-retry" type="button" onClick={() => { void copyDiagnostics(); }}>
+          {hasDiagnosticError && diagnostics.hasEntries() && <button class="rwg-retry" type="button" onClick={() => { void copyDiagnostics(); }}>
             {diagnosticsCopied ? localize('diagnostics_copied') : localize('copy_diagnostics')}
           </button>}
-          {retryable && <button class="rwg-retry" type="button" onClick={retry}>{localize('click_to_retry')}</button>}
         </div>
       </PopupPanel>
     </>
+  );
+}
+
+function ProviderRetryButton({ providerName, onClick }: { providerName: string; onClick(): void }) {
+  const label = `${providerName} · ${localize('click_to_retry')}`;
+  return (
+    <button class="rwg-provider-retry" type="button" onClick={onClick} aria-label={label} title={label}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 8a7 7 0 1 0 1 6M19 4v4h-4" />
+      </svg>
+    </button>
   );
 }

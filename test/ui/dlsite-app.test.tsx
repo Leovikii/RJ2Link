@@ -18,7 +18,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-function renderApp(search: () => Promise<ResourceResult[]>) {
+function renderApp(search: () => Promise<ResourceResult[]>, hasDiagnostics = true) {
   const registry = new ProviderRegistry().registerResource({
     id: 'southplus',
     displayName: 'South Plus',
@@ -32,7 +32,10 @@ function renderApp(search: () => Promise<ResourceResult[]>) {
       code={code}
       controller={controller}
       storage={new MemoryKeyValueStorage()}
-      diagnostics={{ format: () => 'redacted diagnostic report' }}
+      diagnostics={{
+        hasEntries: () => hasDiagnostics,
+        format: () => 'redacted diagnostic report',
+      }}
       clipboard={clipboard}
     />,
   );
@@ -56,7 +59,7 @@ describe('DLsite app interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: localize('copy_diagnostics') }));
     await waitFor(() => expect(clipboard.writeText).toHaveBeenCalledWith('redacted diagnostic report'));
     expect(screen.getByRole('button', { name: localize('diagnostics_copied') })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: localize('click_to_retry') }));
+    fireEvent.click(screen.getByRole('button', { name: `South Plus · ${localize('click_to_retry')}` }));
     await waitFor(() => expect(search).toHaveBeenCalledTimes(2));
     expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
     controller.dispose();
@@ -71,6 +74,71 @@ describe('DLsite app interactions', () => {
 
     expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
     expect(search).toHaveBeenCalledOnce();
+    controller.dispose();
+  });
+
+  it('retries only failed or empty providers and hides empty diagnostics', async () => {
+    const southPlus = vi.fn<() => Promise<ResourceResult[]>>()
+      .mockRejectedValueOnce(new AppError('rate-limited', 'Search cooldown'))
+      .mockResolvedValueOnce([]);
+    const asmrOne = vi.fn<() => Promise<ResourceResult[]>>(async () => [{
+      id: 'asmr', providerId: 'asmr-one', title: 'ASMR ONE', url: 'https://asmr.test',
+    }]);
+    const registry = new ProviderRegistry()
+      .registerResource({ id: 'southplus', displayName: 'South Plus', supports: () => true, search: southPlus })
+      .registerResource({ id: 'asmr-one', displayName: 'ASMR ONE', supports: () => true, search: asmrOne });
+    const controller = new ResourceController(registry);
+    const clipboard: TextClipboard = { writeText: vi.fn(async () => undefined) };
+    render(
+      <DlsiteApp
+        code={code}
+        controller={controller}
+        storage={new MemoryKeyValueStorage()}
+        diagnostics={{ hasEntries: () => false, format: () => '' }}
+        clipboard={clipboard}
+      />,
+    );
+
+    const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 0' });
+    expect(screen.getByText('ASMR').closest('.rwg-fab__source--asmrone')).toBeTruthy();
+    expect(trigger.querySelector('.rwg-fab__source--southplus')?.textContent).toBe('SP0');
+    fireEvent.mouseEnter(trigger);
+    expect(screen.getByText(localize('search_queue_timeout'))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: localize('copy_diagnostics') })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: `South Plus · ${localize('click_to_retry')}` }));
+    await waitFor(() => expect(southPlus).toHaveBeenCalledTimes(2));
+
+    expect(asmrOne).toHaveBeenCalledOnce();
+    controller.dispose();
+  });
+
+  it('places an empty ASMR ONE retry beside its own provider row', async () => {
+    const southPlus = vi.fn<() => Promise<ResourceResult[]>>(async () => [{
+      id: 'forum', providerId: 'southplus', title: 'Forum result', url: 'https://forum.test',
+    }]);
+    const asmrOne = vi.fn<() => Promise<ResourceResult[]>>(async () => []);
+    const registry = new ProviderRegistry()
+      .registerResource({ id: 'southplus', displayName: 'South Plus', supports: () => true, search: southPlus })
+      .registerResource({ id: 'asmr-one', displayName: 'ASMR ONE', supports: () => true, search: asmrOne });
+    const controller = new ResourceController(registry);
+    render(
+      <DlsiteApp
+        code={code}
+        controller={controller}
+        storage={new MemoryKeyValueStorage()}
+        diagnostics={{ hasEntries: () => false, format: () => '' }}
+        clipboard={{ writeText: vi.fn(async () => undefined) }}
+      />,
+    );
+
+    const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 1' });
+    fireEvent.click(trigger);
+    const retry = screen.getByRole('button', { name: `ASMR ONE · ${localize('click_to_retry')}` });
+    expect(retry.closest('.rwg-provider-row')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: `South Plus · ${localize('click_to_retry')}` })).toBeNull();
+    fireEvent.click(retry);
+    await waitFor(() => expect(asmrOne).toHaveBeenCalledTimes(2));
+    expect(southPlus).toHaveBeenCalledOnce();
     controller.dispose();
   });
 

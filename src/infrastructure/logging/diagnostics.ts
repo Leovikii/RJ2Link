@@ -18,6 +18,7 @@ export interface DiagnosticRecorder {
 }
 
 export interface DiagnosticReportSource {
+  hasEntries(): boolean;
   format(): string;
 }
 
@@ -71,7 +72,7 @@ export class DiagnosticBuffer implements DiagnosticRecorder, DiagnosticReportSou
   private readonly entries: DiagnosticEntry[] = [];
 
   constructor(
-    private readonly capacity = 50,
+    private readonly capacity = 12,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -79,6 +80,10 @@ export class DiagnosticBuffer implements DiagnosticRecorder, DiagnosticReportSou
     const causeDetails = safeCauseDetails(input.cause);
     const status = input.status
       ?? (typeof causeDetails?.status === 'number' ? causeDetails.status : undefined);
+    const failedResponse = input.phase === 'load'
+      && status !== undefined
+      && (status < 200 || status >= 300);
+    if (input.phase !== 'error' && input.phase !== 'timeout' && !failedResponse) return;
     const statusText = input.statusText
       ?? (typeof causeDetails?.statusText === 'string' ? causeDetails.statusText : undefined);
     const details = causeDetails ? { ...causeDetails } : undefined;
@@ -102,6 +107,10 @@ export class DiagnosticBuffer implements DiagnosticRecorder, DiagnosticReportSou
     if (this.entries.length > this.capacity) {
       this.entries.splice(0, this.entries.length - this.capacity);
     }
+  }
+
+  hasEntries(): boolean {
+    return this.entries.length > 0;
   }
 
   format(): string {

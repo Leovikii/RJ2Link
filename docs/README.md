@@ -8,6 +8,7 @@
 - [开发规范](development.md)：类型、网络、缓存、状态、DOM、性能、测试和文档规范。
 - [AI agents 指南](agents.md)：AI 修改仓库前必须遵循的入口、工作流程和验证要求。
 - [South Plus RJ 元数据预取](features/southplus-rj-prefetch.md)：预加载功能的网络预算、调度算法和验收标准。
+- [South Plus 搜索协调](features/southplus-search-coordination.md)：跨标签页冷却队列、等待预算、手动重试和精简诊断策略。
 - [v1.3.0 重构计划](plans/v1.3.0.md)：范围、里程碑、交付顺序和发布门槛。
 
 ## 文档职责
@@ -29,4 +30,3 @@
 3. 版本范围或里程碑变化时，更新对应的 `docs/plans/` 文档。
 4. 用户可见功能、安装方式或兼容范围变化时，更新三个用户 README。
 5. 文档描述的是预期行为；如果代码暂未实现，应明确标注目标版本或状态，不能写成已经上线。
-
