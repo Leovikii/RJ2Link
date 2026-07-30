@@ -109,7 +109,48 @@ function InfoGroup({ title, items, theme }: { title: string; items: string[]; th
 }
 
 function LoadingCard() {
-  return <div class="rwg-loading"><span class="rwg-skeleton" /><span class="rwg-skeleton" /><span class="rwg-skeleton" /></div>;
+  return (
+    <div class="rwg-work rwg-work--loading" role="status" aria-busy="true" aria-label={localize('searching')}>
+      <div class="rwg-work__hero" aria-hidden="true">
+        <div class="rwg-work__cover-column">
+          <span class="rwg-skeleton rwg-skeleton--cover" />
+          <div class="rwg-actions rwg-actions--cover">
+            <span class="rwg-skeleton rwg-skeleton--action" />
+            <span class="rwg-skeleton rwg-skeleton--action" />
+          </div>
+        </div>
+        <div class="rwg-work__main">
+          <div class="rwg-skeleton-title">
+            <span class="rwg-skeleton rwg-skeleton--title" />
+            <span class="rwg-skeleton rwg-skeleton--title rwg-skeleton--title-short" />
+          </div>
+          <span class="rwg-skeleton rwg-skeleton--circle" />
+          <div class="rwg-skeleton-badges">
+            <span class="rwg-skeleton rwg-skeleton--badge" />
+            <span class="rwg-skeleton rwg-skeleton--badge rwg-skeleton--badge-wide" />
+            <span class="rwg-skeleton rwg-skeleton--badge" />
+            <span class="rwg-skeleton rwg-skeleton--badge-narrow" />
+            <span class="rwg-skeleton rwg-skeleton--badge-wide" />
+          </div>
+          <SkeletonInfo chips={2} />
+          <SkeletonInfo chips={4} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonInfo({ chips }: { chips: number }) {
+  return (
+    <div class="rwg-skeleton-info">
+      <span class="rwg-skeleton rwg-skeleton--label" />
+      <div class="rwg-skeleton-badges">
+        {Array.from({ length: chips }, (_, index) => (
+          <span key={index} class={`rwg-skeleton rwg-skeleton--chip${index % 3 === 0 ? ' rwg-skeleton--chip-wide' : ''}`} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function StatusMessage({ title, message }: { title: string; message?: string }) {

@@ -35,6 +35,37 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('South Plus metadata popup', () => {
+  it('uses a content-shaped two-column skeleton while metadata is loading', async () => {
+    let resolveWork!: (value: WorkSummary) => void;
+    const pendingWork = new Promise<WorkSummary>((resolve) => { resolveWork = resolve; });
+    const registry = new ProviderRegistry()
+      .registerMetadata({ id: 'dlsite', supports: () => true, getWork: async () => pendingWork });
+    const resources = new ResourceController(registry);
+    const popup = new PopupController();
+    const clipboard: TextClipboard = { writeText: vi.fn(async () => undefined) };
+    popup.open(code, { left: 100, top: 100, width: 20, height: 20 } as DOMRect, true);
+    const { container } = render(
+      <SouthPlusApp
+        popup={popup}
+        resources={resources}
+        clipboard={clipboard}
+        cancelHide={() => {}}
+        startHide={() => {}}
+      />,
+    );
+
+    await waitFor(() => expect(container.querySelector('.rwg-work--loading')).toBeTruthy());
+    const skeleton = container.querySelector('.rwg-work--loading');
+    expect(skeleton?.querySelector('.rwg-skeleton--cover')).toBeTruthy();
+    expect(skeleton?.querySelectorAll('.rwg-skeleton--action')).toHaveLength(2);
+    expect(skeleton?.querySelectorAll('.rwg-skeleton-info')).toHaveLength(2);
+    expect(skeleton?.querySelectorAll('.rwg-skeleton--chip')).toHaveLength(6);
+
+    resolveWork(work);
+    await screen.findByText('Test Work');
+    resources.dispose();
+  });
+
   it('places actions under the cover and differentiates voice and genre tags', async () => {
     const registry = new ProviderRegistry()
       .registerMetadata({ id: 'dlsite', supports: () => true, getWork: async () => work })
