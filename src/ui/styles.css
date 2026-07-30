@@ -28,11 +28,18 @@
 .rwg-info>strong { color:#cbd5e1; font-size:12px; }
 .rwg-actions { display:grid; gap:9px; }
 .rwg-actions--cover { margin-top:0; }
-.rwg-action { display:flex; align-items:center; justify-content:space-between; box-sizing:border-box; width:100%; padding:10px 14px; border-radius:12px; color:white!important; text-decoration:none!important; box-shadow:0 4px 10px rgba(0,0,0,.25); transition:transform .18s ease,filter .18s ease; }
-.rwg-action:hover { transform:translateY(-1px); filter:brightness(1.08); }
-.rwg-action--dlsite { background:linear-gradient(#1a75ff,#04c); }
-.rwg-action--asmrone { background:linear-gradient(#51d8cf,#29b8ac); }
-.rwg-action.is-disabled { background:rgba(255,255,255,.06); color:rgba(255,255,255,.3)!important; pointer-events:none; box-shadow:none; }
+.rwg-action { display:flex; align-items:center; justify-content:space-between; box-sizing:border-box; width:100%; padding:10px 14px; border:1px solid transparent; border-radius:12px; color:#fff!important; background-clip:padding-box; text-decoration:none!important; box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.14); cursor:pointer; transition:transform .18s ease,filter .18s ease,box-shadow .18s ease; }
+.rwg-root a.rwg-action:not(.is-disabled) { color:#fff!important; }
+.rwg-action>strong,.rwg-action>span { color:inherit!important; }
+.rwg-action>strong { font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.22); }
+.rwg-action>span { opacity:.9; font-size:1.08em; }
+.rwg-action:not(.is-disabled):hover { transform:translateY(-1px); filter:brightness(1.1); box-shadow:0 6px 14px rgba(0,0,0,.3),inset 0 1px rgba(255,255,255,.2); }
+.rwg-action:focus-visible { outline:2px solid #bfdbfe; outline-offset:2px; }
+.rwg-action--dlsite { background-color:#043aa8; background-image:linear-gradient(#2580ff 0%,#0759e6 64%,#043aa8 100%); }
+.rwg-action--asmrone { background-color:#159f96; background-image:linear-gradient(#35cfc4,#159f96); }
+.rwg-action.is-disabled { border-color:transparent; background-color:rgba(255,255,255,.06); background-image:none; color:rgba(255,255,255,.34)!important; cursor:not-allowed; box-shadow:inset 0 0 0 1px rgba(255,255,255,.04); }
+.rwg-root a.rwg-action.is-disabled { color:rgba(255,255,255,.34)!important; }
+.rwg-action.is-disabled>strong { text-shadow:none; }
 .rwg-loading { display:grid; gap:10px; }
 .rwg-skeleton { display:block; min-height:18px; border-radius:7px; background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.16),rgba(255,255,255,.05)); background-size:200% 100%; animation:rwg-shimmer 1.3s infinite; }
 .rwg-work--loading { min-height:0; }

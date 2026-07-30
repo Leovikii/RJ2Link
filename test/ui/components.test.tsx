@@ -30,6 +30,15 @@ describe('Preact shared components', () => {
     expect(link.getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('renders an enabled action as an external navigation link', () => {
+    render(<ActionButton theme="dlsite" href="https://www.dlsite.com/work/example" />);
+    const link = screen.getByText('DLsite').closest('a')!;
+    expect(link.getAttribute('href')).toBe('https://www.dlsite.com/work/example');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('aria-disabled')).toBe('false');
+    expect(link.classList.contains('is-disabled')).toBe(false);
+  });
+
   it('clamps a large popup inside the viewport when neither side fully fits', () => {
     expect(calculatePopupPosition(416, 300, { width: 1024, height: 768 }, 650, 680)).toEqual({
       left: '10px',
