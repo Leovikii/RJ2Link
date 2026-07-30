@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { ResourceController } from '../../application/resource-controller';
-import { providerRegistry, storage } from '../../application/runtime';
+import { clipboard, diagnostics, providerRegistry, storage } from '../../application/runtime';
 import { parseRjCode } from '../../domain/rj-code';
 import { DlsiteApp } from '../../ui/dlsite/app';
 
@@ -15,7 +15,16 @@ export function initDlsite(): (() => void) | null {
   mount.className = 'rwg-root';
   document.body.appendChild(mount);
   const controller = new ResourceController(providerRegistry);
-  render(<DlsiteApp code={code} controller={controller} storage={storage} />, mount);
+  render(
+    <DlsiteApp
+      code={code}
+      controller={controller}
+      storage={storage}
+      diagnostics={diagnostics}
+      clipboard={clipboard}
+    />,
+    mount,
+  );
 
   return () => {
     controller.dispose();

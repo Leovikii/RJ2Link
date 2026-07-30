@@ -7,12 +7,24 @@ import { ActionButton } from '../components/action-button';
 import { localize } from '../../config/localization';
 import type { KeyValueStorage } from '../../infrastructure/storage/key-value-storage';
 import { useMobileFabPosition } from '../hooks/use-mobile-fab-position';
+import type { DiagnosticReportSource } from '../../infrastructure/logging/diagnostics';
+import type { TextClipboard } from '../../infrastructure/gm/clipboard';
 
-export function DlsiteApp({ code, controller, storage }: { code: RjCode; controller: ResourceController; storage: KeyValueStorage }) {
+interface DlsiteAppProps {
+  code: RjCode;
+  controller: ResourceController;
+  storage: KeyValueStorage;
+  diagnostics: DiagnosticReportSource;
+  clipboard: TextClipboard;
+}
+
+export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }: DlsiteAppProps) {
   const state = useExternalStore(controller);
   const [open, setOpen] = useState(false);
+  const [diagnosticsCopied, setDiagnosticsCopied] = useState(false);
   const fab = useMobileFabPosition(storage);
   const hideTimer = useRef<number | null>(null);
+  const copyFeedbackTimer = useRef<number | null>(null);
 
   const cancelHide = () => {
     if (hideTimer.current !== null) window.clearTimeout(hideTimer.current);
@@ -28,7 +40,10 @@ export function DlsiteApp({ code, controller, storage }: { code: RjCode; control
     void controller.load(code, { work: false });
   }, [code, controller]);
 
-  useEffect(() => () => cancelHide(), []);
+  useEffect(() => () => {
+    cancelHide();
+    if (copyFeedbackTimer.current !== null) window.clearTimeout(copyFeedbackTimer.current);
+  }, []);
 
   const asmr = state.resources['asmr-one'];
   const resourceEntries = Object.entries(state.resources);
@@ -45,15 +60,34 @@ export function DlsiteApp({ code, controller, storage }: { code: RjCode; control
   const asmrUrl = asmr?.status === 'success' ? asmr.data[0]?.url : null;
   const hasResource = Boolean(asmrUrl || results.length);
   const allDone = resourceEntries.length > 0 && resourceEntries.every(([, resource]) => resource.status !== 'loading');
+  const hasError = resourceEntries.some(([, resource]) => resource.status === 'error');
+  const retryable = allDone && (hasError || !hasResource);
   const label = useMemo(() => loading ? localize('searching') : hasResource ? `RJ · ${results.length}` : 'RJ', [loading, hasResource, results.length]);
 
   const click = () => {
     if (!fab.consumeClick()) return;
-    if (allDone && !hasResource) {
-      void controller.refresh(code, { work: false });
+    if (window.innerWidth > 768) {
+      setOpen(true);
       return;
     }
     setOpen((value) => !value);
+  };
+
+  const retry = () => {
+    cancelHide();
+    setOpen(true);
+    void controller.refresh(code, { work: false });
+  };
+
+  const copyDiagnostics = async () => {
+    try {
+      await clipboard.writeText(diagnostics.format());
+      setDiagnosticsCopied(true);
+      if (copyFeedbackTimer.current !== null) window.clearTimeout(copyFeedbackTimer.current);
+      copyFeedbackTimer.current = window.setTimeout(() => setDiagnosticsCopied(false), 1_200);
+    } catch {
+      setDiagnosticsCopied(false);
+    }
   };
 
   return (
@@ -68,7 +102,7 @@ export function DlsiteApp({ code, controller, storage }: { code: RjCode; control
         onPointerUp={fab.onPointerUp}
         onPointerCancel={fab.onPointerCancel}
         onMouseEnter={() => {
-          if (window.innerWidth > 768 && hasResource) {
+          if (window.innerWidth > 768) {
             cancelHide();
             setOpen(true);
           }
@@ -102,6 +136,10 @@ export function DlsiteApp({ code, controller, storage }: { code: RjCode; control
               <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{result.author} {result.date}</small></a></li>
             ))}</ul>}
           </section>)}
+          {hasError && <button class="rwg-retry" type="button" onClick={() => { void copyDiagnostics(); }}>
+            {diagnosticsCopied ? localize('diagnostics_copied') : localize('copy_diagnostics')}
+          </button>}
+          {retryable && <button class="rwg-retry" type="button" onClick={retry}>{localize('click_to_retry')}</button>}
         </div>
       </PopupPanel>
     </>

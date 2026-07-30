@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '../../src/domain/errors';
 import { GmHttpClient, assertHttpSuccess, parseJson } from '../../src/infrastructure/http/http-client';
+import { DiagnosticBuffer } from '../../src/infrastructure/logging/diagnostics';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -35,10 +36,46 @@ describe('GmHttpClient', () => {
     vi.stubGlobal('GM_xmlhttpRequest', legacy);
     vi.stubGlobal('GM', { xmlHttpRequest: modern });
 
-    await new GmHttpClient().request({ url: 'https://example.test' });
+    const diagnostics = new DiagnosticBuffer();
+    await new GmHttpClient(undefined, 10_000, diagnostics).request({
+      url: 'https://example.test',
+      diagnosticLabel: 'test.legacy',
+    });
 
     expect(legacy).toHaveBeenCalledOnce();
     expect(modern).not.toHaveBeenCalled();
+    expect(diagnostics.format()).toContain('test.legacy load GET https://example.test/ transport=legacy');
+  });
+
+  it('records a redacted diagnostic for a failed POST request', async () => {
+    const diagnostics = new DiagnosticBuffer(50, () => new Date('2026-07-30T12:00:00.000Z'));
+    const client = new GmHttpClient((options) => {
+      options.onerror?.({
+        readyState: 4,
+        status: 0,
+        statusText: 'Blocked https://example.test/search.php?token=secret',
+        error: 'Cookie=session-secret',
+        responseText: 'private-response-body',
+        responseHeaders: 'Set-Cookie: session-secret',
+      });
+    }, 10_000, diagnostics);
+
+    await expect(client.request({
+      method: 'POST',
+      url: 'https://example.test/search.php?step=2&token=secret',
+      headers: { Cookie: 'session-secret' },
+      body: 'keyword=RJ123456&token=body-secret',
+      diagnosticLabel: 'southplus.search-submit',
+    })).rejects.toMatchObject({ kind: 'network' });
+
+    const report = diagnostics.format();
+    expect(report).toContain('southplus.search-submit error POST https://example.test/search.php transport=injected');
+    expect(report).toContain('status=0');
+    expect(report).toContain('readyState');
+    expect(report).not.toContain('token=secret');
+    expect(report).not.toContain('session-secret');
+    expect(report).not.toContain('private-response-body');
+    expect(report).not.toContain('keyword=RJ123456');
   });
 
   it.each([

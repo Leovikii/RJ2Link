@@ -50,6 +50,18 @@ export const localizationMap = {
         en_US: "click to retry"
     },
 
+    copy_diagnostics: {
+        zh_CN: "复制诊断信息",
+        zh_TW: "複製診斷資訊",
+        en_US: "Copy diagnostics"
+    },
+
+    diagnostics_copied: {
+        zh_CN: "诊断信息已复制",
+        zh_TW: "診斷資訊已複製",
+        en_US: "Diagnostics copied"
+    },
+
 
     circle_name: {
         zh_CN: "社团名",

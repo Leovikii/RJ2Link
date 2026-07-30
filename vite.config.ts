@@ -37,8 +37,14 @@ export default defineConfig({
         connect: [
           'www.dlsite.com',
           'api.asmr-200.com',
+          'south-plus.net',
+          'www.south-plus.net',
           '*.south-plus.net',
+          'spring-plus.net',
+          'www.spring-plus.net',
           '*.spring-plus.net',
+          'level-plus.net',
+          'www.level-plus.net',
           '*.level-plus.net'
         ],
         grant: [

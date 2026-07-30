@@ -11,7 +11,7 @@
 ## 🌟 Features
 
 - **Metadata Preview Card**: Click any RJ code in the forum to instantly preview DLsite metadata via an immersive card, including cover art, title, voice actors, tags, and sales data.
-- **DLsite Global FAB**: Automatically injected into DLsite work pages, enabling cross-site search to quickly find related ASMR ONE streams and South Plus forum discussions.
+- **DLsite Global FAB**: Automatically injected into DLsite work pages; hover or click it to inspect ASMR ONE and South Plus results, including visible error/empty states, an explicit retry action, and a button to copy privacy-safe request diagnostics after an error.
 - **ASMR ONE Integration**: Features a built-in redirection engine with a one-click shortcut to ASMR ONE online streaming pages.
 - **Native Dark Mode**: Includes a built-in dark mode for South Plus forums to ensure a consistent visual experience that perfectly matches the popup UI.
 - **Auto-Localization**: The interface automatically adapts between English, Simplified Chinese, and Traditional Chinese based on your browser environment.

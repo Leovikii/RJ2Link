@@ -36,6 +36,7 @@ export class SouthPlusResourceProvider implements ResourceProvider {
         timeoutMs: 10_000,
         signal: context.signal,
         anonymous: false,
+        diagnosticLabel: 'southplus.search-form',
       }));
       if (/\/login\.php(?:[?#]|$)/i.test(getResponse.finalUrl)) {
         throw new AppError('unauthorized', `South Plus login is required on ${domain}`);
@@ -48,6 +49,7 @@ export class SouthPlusResourceProvider implements ResourceProvider {
         timeoutMs: 10_000,
         signal: context.signal,
         anonymous: false,
+        diagnosticLabel: 'southplus.search-submit',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Referer: searchUrl,

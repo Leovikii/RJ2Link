@@ -8,9 +8,11 @@ import { AsmrOneResourceProvider } from '../providers/asmr-one/resource-provider
 import { SouthPlusResourceProvider } from '../providers/southplus/resource-provider';
 import { ProviderRegistry } from '../services/provider-registry';
 import { GmTextClipboard } from '../infrastructure/gm/clipboard';
+import { DiagnosticBuffer } from '../infrastructure/logging/diagnostics';
 
 const storage = new GmKeyValueStorage();
-const http = new GmHttpClient();
+export const diagnostics = new DiagnosticBuffer();
+const http = new GmHttpClient(undefined, 10_000, diagnostics);
 const queryCache = new QueryCache(storage);
 const queryClient = new QueryClient(queryCache);
 const limiter = new SouthPlusRateLimiter(storage);

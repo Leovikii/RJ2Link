@@ -39,6 +39,8 @@
 .rwg-fab.is-loading { animation:rwg-pulse 1.2s infinite; }
 .rwg-resource-panel { display:grid; gap:14px; }
 .rwg-resource-panel h3 { margin:4px 0 0; color:#c4b5fd; }
+.rwg-retry { appearance:none; justify-self:center; padding:8px 16px; border:1px solid rgba(167,139,250,.6); border-radius:999px; color:#ede9fe; background:rgba(124,58,237,.24); font:inherit; cursor:pointer; }
+.rwg-retry:hover { background:rgba(124,58,237,.4); }
 .rwg-results { display:grid; gap:8px; max-height:300px; overflow:auto; list-style:none; padding:0; margin:0; }
 .rwg-results a { display:grid; gap:4px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color:#e5e7eb!important; text-decoration:none!important; }
 .rwg-results a:hover { border-color:#a78bfa; background:rgba(255,255,255,.1); }
@@ -48,7 +50,7 @@
 @keyframes rwg-in { from { opacity:0; transform:scale(.97); } }
 @keyframes rwg-shimmer { to { background-position:-200% 0; } }
 @keyframes rwg-pulse { 50% { opacity:.5; } }
-@media (prefers-reduced-motion:reduce) { .rwg-popup,.rwg-fab,.rwg-action,.rwg-skeleton { animation:none!important; transition:none!important; } }
+@media (prefers-reduced-motion:reduce) { .rwg-popup,.rwg-fab,.rwg-action,.rwg-retry,.rwg-skeleton { animation:none!important; transition:none!important; } }
 @media (max-width:768px) {
   .rwg-popup { width:100%!important; max-width:100%!important; left:0!important; right:auto!important; top:auto!important; bottom:0!important; max-height:55vh; border-radius:20px 20px 0 0; }
   .rwg-work__hero { grid-template-columns:110px 1fr; gap:12px; }
