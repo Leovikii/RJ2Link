@@ -138,14 +138,14 @@ export function useMobileFabPosition(storage: KeyValueStorage) {
     setPosition(current.latest);
   };
 
-  const finishDrag = (event: JSX.TargetedPointerEvent<HTMLButtonElement>, cancelled = false) => {
+  const finishDrag = (event: JSX.TargetedPointerEvent<HTMLButtonElement>) => {
     const current = drag.current;
     if (!current || current.pointerId !== event.pointerId) return;
     drag.current = null;
     setDragging(false);
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     suppressClick.current = current.moved;
-    if (!current.moved || cancelled) return;
+    if (!current.moved) return;
     const finalPosition = mobile
       ? snapFabPosition(current.latest, viewportSize(), elementSize())
       : clampFabPosition(current.latest, viewportSize(), elementSize());
@@ -168,7 +168,7 @@ export function useMobileFabPosition(storage: KeyValueStorage) {
     onPointerDown,
     onPointerMove,
     onPointerUp: (event: JSX.TargetedPointerEvent<HTMLButtonElement>) => finishDrag(event),
-    onPointerCancel: (event: JSX.TargetedPointerEvent<HTMLButtonElement>) => finishDrag(event, true),
+    onPointerCancel: (event: JSX.TargetedPointerEvent<HTMLButtonElement>) => finishDrag(event),
     consumeClick(): boolean {
       if (!suppressClick.current) return true;
       suppressClick.current = false;

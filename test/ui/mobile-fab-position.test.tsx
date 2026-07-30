@@ -13,6 +13,7 @@ function DragHarness() {
     onPointerDown={fab.onPointerDown}
     onPointerMove={fab.onPointerMove}
     onPointerUp={fab.onPointerUp}
+    onPointerCancel={fab.onPointerCancel}
   >Drag</button>;
 }
 
@@ -58,5 +59,19 @@ describe('mobile FAB positioning', () => {
 
     expect(button.style.getPropertyValue('--rwg-fab-left')).toBe('260px');
     expect(button.style.getPropertyValue('--rwg-fab-top')).toBe('50px');
+  });
+
+  it('settles and snaps a moved pointer when the browser cancels the gesture', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 640 });
+    const { getByRole } = render(<DragHarness />);
+    const button = getByRole('button', { name: 'Drag' });
+
+    fireEvent.pointerDown(button, { pointerId: 1, isPrimary: true, button: 0, clientX: 300, clientY: 500 });
+    fireEvent.pointerMove(button, { pointerId: 1, isPrimary: true, clientX: 80, clientY: 300 });
+    fireEvent.pointerCancel(button, { pointerId: 1, isPrimary: true, clientX: 80, clientY: 300 });
+
+    expect(button.style.getPropertyValue('--rwg-fab-left')).toBe('0px');
+    expect(button.style.getPropertyValue('--rwg-fab-top')).toBe('0px');
   });
 });

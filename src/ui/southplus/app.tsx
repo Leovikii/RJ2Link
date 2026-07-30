@@ -10,6 +10,7 @@ import { Badge } from '../components/badge';
 import { Cover } from '../components/cover';
 import { localize } from '../../config/localization';
 import type { TextClipboard } from '../../infrastructure/gm/clipboard';
+import { normalizeDateOnly } from '../../domain/date';
 
 interface SouthPlusAppProps {
   popup: PopupController;
@@ -39,6 +40,7 @@ export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHid
   const asmrState = state.resources['asmr-one'];
   const asmrUrl = asmrState?.status === 'success' ? asmrState.data[0]?.url : null;
   const work = state.work.status === 'success' ? state.work.data : null;
+  const releaseDate = normalizeDateOnly(work?.releaseDate);
   const loading = state.work.status === 'loading';
   const error = state.work.status === 'error' ? state.work.error : null;
   const copyTitle = async () => {
@@ -87,7 +89,7 @@ export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHid
               <div class="rwg-badges">
                 {work.sales !== null && <Badge theme="sales" text={`${localize('dl_count')} ${work.sales}`} />}
                 {work.ratingAverage !== null && <Badge theme="rating" text={`★ ${work.ratingAverage.toFixed(2)}${work.ratingCount ? ` (${work.ratingCount})` : ''}`} />}
-                {work.releaseDate && <Badge text={work.releaseDate} />}
+                {releaseDate && <Badge text={releaseDate} />}
                 {work.ageRating && <Badge theme={work.ageRating === 'R18' ? 'danger' : 'default'} text={work.ageRating} />}
                 {work.workType && <Badge theme="type" text={localizeWorkType(work.workTypeId, work.workType)} />}
                 {work.fileSize !== null && <Badge text={formatFileSize(work.fileSize) ?? ''} />}

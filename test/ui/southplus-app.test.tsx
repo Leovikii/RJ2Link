@@ -17,7 +17,7 @@ const work: WorkSummary = {
   sales: 42,
   ratingAverage: 4.5,
   ratingCount: 10,
-  releaseDate: '2026-07-25',
+  releaseDate: '2026-07-25 00:00:00',
   ageRating: 'R18',
   workType: 'Voice / ASMR',
   workTypeId: 0,
@@ -63,6 +63,7 @@ describe('South Plus metadata popup', () => {
     const coverColumn = container.querySelector('.rwg-work__cover-column')!;
     expect(coverColumn.querySelectorAll('.rwg-action')).toHaveLength(2);
     expect(screen.getByText('2026-07-25')).toBeTruthy();
+    expect(screen.queryByText(/00:00:00/)).toBeNull();
     expect(container.querySelector('.rwg-badge--voice')?.textContent).toBe('Voice Actor');
     expect(container.querySelector('.rwg-badge--genre')?.textContent).toBe('Genre Tag');
     resources.dispose();

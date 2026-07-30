@@ -11,6 +11,7 @@ import type { DiagnosticReportSource } from '../../infrastructure/logging/diagno
 import type { TextClipboard } from '../../infrastructure/gm/clipboard';
 import { useAttachedPopupPosition } from '../hooks/use-popup-position';
 import { normalizeDateOnly } from '../../domain/date';
+import rjWarpGateIcon from '../../../assets/icon.svg';
 
 interface DlsiteAppProps {
   code: RjCode;
@@ -117,7 +118,7 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
         aria-expanded={open}
         aria-label={accessibleLabel}
       >
-        <span class="rwg-fab__brand" aria-hidden="true">RJ</span>
+        <img class="rwg-fab__brand" src={rjWarpGateIcon} alt="" aria-hidden="true" />
         <strong class="rwg-fab__count">{loading ? '…' : `SP ${results.length}`}</strong>
         {asmrUrl && <span class="rwg-fab__audio" aria-hidden="true">♫</span>}
       </button>
