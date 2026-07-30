@@ -2,6 +2,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ActionButton } from '../../src/ui/components/action-button';
 import { PopupPanel } from '../../src/ui/components/popup-panel';
+import {
+  calculateAttachedPopupPosition,
+  calculatePopupPosition,
+} from '../../src/ui/hooks/use-popup-position';
 
 afterEach(cleanup);
 
@@ -24,5 +28,23 @@ describe('Preact shared components', () => {
     const link = screen.getByText('ASMR.one').closest('a')!;
     expect(link.getAttribute('href')).toBeNull();
     expect(link.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('clamps a large popup inside the viewport when neither side fully fits', () => {
+    expect(calculatePopupPosition(416, 300, { width: 1024, height: 768 }, 650, 680)).toEqual({
+      left: '10px',
+      top: '10px',
+    });
+  });
+
+  it('attaches a resource popup above a bottom-right FAB', () => {
+    expect(calculateAttachedPopupPosition(
+      { left: 820, right: 936, top: 680, bottom: 738 },
+      { width: 960, height: 768 },
+    )).toMatchObject({
+      left: '576px',
+      bottom: '100px',
+      width: '360px',
+    });
   });
 });

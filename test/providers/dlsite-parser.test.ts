@@ -14,15 +14,15 @@ describe('DLsite parser', () => {
       age_category: 3,
       work_type: 'SOU',
       contents_file_size: 1048576,
+      regist_date: '2026-07-25 00:00:00',
       creaters: { voice_by: [{ name: 'Actor' }] },
       genres: [{ name: 'ASMR' }],
     }], parseRjCode('RJ123456')!);
     expect(summary).toMatchObject({
       title: 'Work', imageUrl: 'https://img.example/work.jpg', circle: 'Circle',
       sales: 42, ratingAverage: 4.5, ageRating: 'R18', workTypeId: 0,
-      voiceActors: ['Actor'], genres: ['ASMR'],
+      voiceActors: ['Actor'], genres: ['ASMR'], releaseDate: '2026-07-25',
     });
     expect(formatFileSize(summary.fileSize)).toBe('1MB');
   });
 });
-

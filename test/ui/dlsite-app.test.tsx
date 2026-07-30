@@ -8,6 +8,7 @@ import { MemoryKeyValueStorage } from '../../src/infrastructure/storage/key-valu
 import type { TextClipboard } from '../../src/infrastructure/gm/clipboard';
 import { ProviderRegistry } from '../../src/services/provider-registry';
 import { DlsiteApp } from '../../src/ui/dlsite/app';
+import type { ResourceResult } from '../../src/domain/work';
 
 const code = parseRjCode('RJ123456')!;
 
@@ -17,7 +18,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-function renderApp(search: () => Promise<never[]>) {
+function renderApp(search: () => Promise<ResourceResult[]>) {
   const registry = new ProviderRegistry().registerResource({
     id: 'southplus',
     displayName: 'South Plus',
@@ -44,7 +45,7 @@ describe('DLsite app interactions', () => {
       async () => { throw new AppError('unauthorized', 'Login required'); },
     );
     const { controller, clipboard } = renderApp(search);
-    const trigger = await screen.findByRole('button', { name: 'RJ' });
+    const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 0' });
 
     fireEvent.mouseEnter(trigger);
 
@@ -64,12 +65,47 @@ describe('DLsite app interactions', () => {
   it('opens empty results on the first click without silently retrying', async () => {
     const search = vi.fn<() => Promise<never[]>>(async () => []);
     const { controller } = renderApp(search);
-    const trigger = await screen.findByRole('button', { name: 'RJ' });
+    const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 0' });
 
     fireEvent.click(trigger);
 
     expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
     expect(search).toHaveBeenCalledOnce();
+    controller.dispose();
+  });
+
+  it('shows resource dates without time components', async () => {
+    const search = vi.fn<() => Promise<ResourceResult[]>>(async () => [{
+      id: '1',
+      providerId: 'southplus',
+      title: 'Forum result',
+      url: 'https://example.test/result',
+      author: 'Author',
+      date: '2026-07-30 15:50',
+    }]);
+    const { controller } = renderApp(search);
+    const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 1' });
+
+    fireEvent.click(trigger);
+
+    expect(screen.getByText('Author 2026-07-30')).toBeTruthy();
+    expect(screen.queryByText(/15:50/u)).toBeNull();
+    controller.dispose();
+  });
+
+  it('uses a closable bottom-sheet interaction on mobile', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 844 });
+    const search = vi.fn<() => Promise<ResourceResult[]>>(async () => []);
+    const { controller } = renderApp(search);
+    const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 0' });
+
+    fireEvent.click(trigger);
+
+    expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
+    expect(trigger.classList.contains('is-open')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Search Result' })).toBeNull();
     controller.dispose();
   });
 });

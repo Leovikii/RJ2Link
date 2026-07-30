@@ -42,7 +42,21 @@ describe('mobile FAB positioning', () => {
     fireEvent.pointerMove(button, { pointerId: 1, isPrimary: true, clientX: 270, clientY: 150 });
     fireEvent.pointerUp(button, { pointerId: 1, isPrimary: true, clientX: 270, clientY: 150 });
 
-    expect(button.style.left).toBe('296px');
-    expect(button.style.top).toBe('50px');
+    expect(button.style.getPropertyValue('--rwg-fab-left')).toBe('232px');
+    expect(button.style.getPropertyValue('--rwg-fab-top')).toBe('50px');
+  });
+
+  it('supports free dragging on desktop', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const { getByRole } = render(<DragHarness />);
+    const button = getByRole('button', { name: 'Drag' });
+
+    fireEvent.pointerDown(button, { pointerId: 1, isPrimary: true, button: 0, clientX: 10, clientY: 100 });
+    fireEvent.pointerMove(button, { pointerId: 1, isPrimary: true, clientX: 270, clientY: 150 });
+    fireEvent.pointerUp(button, { pointerId: 1, isPrimary: true, clientX: 270, clientY: 150 });
+
+    expect(button.style.getPropertyValue('--rwg-fab-left')).toBe('260px');
+    expect(button.style.getPropertyValue('--rwg-fab-top')).toBe('50px');
   });
 });

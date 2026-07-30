@@ -21,7 +21,10 @@ interface DragState {
   moved: boolean;
 }
 
-const STORAGE_KEY = 'rj_warp_gate_fab_pos_mobile';
+const STORAGE_KEYS = {
+  desktop: 'rj_warp_gate_fab_pos_desktop',
+  mobile: 'rj_warp_gate_fab_pos_mobile_v2',
+} as const;
 const DRAG_THRESHOLD = 5;
 
 export function clampFabPosition(position: FabPosition, viewport: Size, element: Size): FabPosition {
@@ -62,30 +65,39 @@ export function useMobileFabPosition(storage: KeyValueStorage) {
   const drag = useRef<DragState | null>(null);
   const suppressClick = useRef(false);
   const [mobile, setMobile] = useState(() => window.innerWidth <= 768);
+  const mobileRef = useRef(mobile);
   const [position, setPosition] = useState<FabPosition | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   const elementSize = (): Size => ({
-    width: buttonRef.current?.offsetWidth || 64,
-    height: buttonRef.current?.offsetHeight || 48,
+    width: buttonRef.current?.offsetWidth || 128,
+    height: buttonRef.current?.offsetHeight || 56,
   });
   const viewportSize = (): Size => ({ width: window.innerWidth, height: window.innerHeight });
   const persist = (value: FabPosition) => {
-    void storage.set(STORAGE_KEY, value).catch(() => {});
+    void storage.set(mobile ? STORAGE_KEYS.mobile : STORAGE_KEYS.desktop, value).catch(() => {});
   };
 
   useEffect(() => {
     let active = true;
-    void storage.get<unknown>(STORAGE_KEY, null).then((stored) => {
+    const key = mobile ? STORAGE_KEYS.mobile : STORAGE_KEYS.desktop;
+    void storage.get<unknown>(key, null).then((stored) => {
       const parsed = parseStoredPosition(stored);
-      if (!active || !parsed) return;
-      setPosition(clampFabPosition(parsed, viewportSize(), elementSize()));
+      if (!active) return;
+      setPosition(parsed ? clampFabPosition(parsed, viewportSize(), elementSize()) : null);
     });
     return () => { active = false; };
-  }, [storage]);
+  }, [mobile, storage]);
 
   useEffect(() => {
     const resize = () => {
-      setMobile(window.innerWidth <= 768);
+      const nextMobile = window.innerWidth <= 768;
+      if (nextMobile !== mobileRef.current) {
+        mobileRef.current = nextMobile;
+        setMobile(nextMobile);
+        setPosition(null);
+        return;
+      }
       setPosition((current) => current
         ? clampFabPosition(current, viewportSize(), elementSize())
         : current);
@@ -95,7 +107,7 @@ export function useMobileFabPosition(storage: KeyValueStorage) {
   }, []);
 
   const onPointerDown = (event: JSX.TargetedPointerEvent<HTMLButtonElement>) => {
-    if (!mobile || !event.isPrimary || event.button !== 0) return;
+    if (!event.isPrimary || event.button !== 0) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const origin = { x: rect.left, y: rect.top };
     drag.current = {
@@ -106,6 +118,7 @@ export function useMobileFabPosition(storage: KeyValueStorage) {
       latest: origin,
       moved: false,
     };
+    setDragging(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
@@ -129,24 +142,29 @@ export function useMobileFabPosition(storage: KeyValueStorage) {
     const current = drag.current;
     if (!current || current.pointerId !== event.pointerId) return;
     drag.current = null;
+    setDragging(false);
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     suppressClick.current = current.moved;
     if (!current.moved || cancelled) return;
-    const snapped = snapFabPosition(current.latest, viewportSize(), elementSize());
-    setPosition(snapped);
-    persist(snapped);
+    const finalPosition = mobile
+      ? snapFabPosition(current.latest, viewportSize(), elementSize())
+      : clampFabPosition(current.latest, viewportSize(), elementSize());
+    setPosition(finalPosition);
+    persist(finalPosition);
   };
 
-  const style = useMemo<JSX.CSSProperties | undefined>(() => mobile && position ? {
-    left: `${position.x}px`,
-    right: 'auto',
-    top: `${position.y}px`,
-    transform: 'none',
-  } : undefined, [mobile, position]);
+  const style = useMemo<JSX.CSSProperties | undefined>(() => position ? ({
+    '--rwg-fab-left': `${position.x}px`,
+    '--rwg-fab-right': 'auto',
+    '--rwg-fab-top': `${position.y}px`,
+    '--rwg-fab-bottom': 'auto',
+  } as JSX.CSSProperties) : undefined, [position]);
 
   return {
     buttonRef,
     style,
+    position,
+    dragging,
     onPointerDown,
     onPointerMove,
     onPointerUp: (event: JSX.TargetedPointerEvent<HTMLButtonElement>) => finishDrag(event),

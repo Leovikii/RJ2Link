@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { RjCode } from '../../domain/rj-code';
 import type { ResourceController } from '../../application/resource-controller';
 import { useExternalStore } from '../hooks/use-external-store';
@@ -9,6 +9,8 @@ import type { KeyValueStorage } from '../../infrastructure/storage/key-value-sto
 import { useMobileFabPosition } from '../hooks/use-mobile-fab-position';
 import type { DiagnosticReportSource } from '../../infrastructure/logging/diagnostics';
 import type { TextClipboard } from '../../infrastructure/gm/clipboard';
+import { useAttachedPopupPosition } from '../hooks/use-popup-position';
+import { normalizeDateOnly } from '../../domain/date';
 
 interface DlsiteAppProps {
   code: RjCode;
@@ -23,6 +25,7 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
   const [open, setOpen] = useState(false);
   const [diagnosticsCopied, setDiagnosticsCopied] = useState(false);
   const fab = useMobileFabPosition(storage);
+  const popupPosition = useAttachedPopupPosition(fab.buttonRef, open, fab.position);
   const hideTimer = useRef<number | null>(null);
   const copyFeedbackTimer = useRef<number | null>(null);
 
@@ -62,7 +65,9 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
   const allDone = resourceEntries.length > 0 && resourceEntries.every(([, resource]) => resource.status !== 'loading');
   const hasError = resourceEntries.some(([, resource]) => resource.status === 'error');
   const retryable = allDone && (hasError || !hasResource);
-  const label = useMemo(() => loading ? localize('searching') : hasResource ? `RJ · ${results.length}` : 'RJ', [loading, hasResource, results.length]);
+  const accessibleLabel = loading
+    ? `RJ Warp Gate · ${localize('searching')}`
+    : `RJ Warp Gate · SP ${results.length}`;
 
   const click = () => {
     if (!fab.consumeClick()) return;
@@ -94,7 +99,7 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
     <>
       <button
         ref={fab.buttonRef}
-        class={`rwg-fab${loading ? ' is-loading' : ''}`}
+        class={`rwg-fab${loading ? ' is-loading' : ''}${fab.dragging ? ' is-dragging' : ''}${open ? ' is-open' : ''}`}
         style={fab.style}
         type="button"
         onPointerDown={fab.onPointerDown}
@@ -110,15 +115,16 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
         onMouseLeave={startHide}
         onClick={click}
         aria-expanded={open}
+        aria-label={accessibleLabel}
       >
-        <strong>{label}</strong>
-        {asmrUrl && <span>♫</span>}
-        {results.length > 0 && <span>SP</span>}
+        <span class="rwg-fab__brand" aria-hidden="true">RJ</span>
+        <strong class="rwg-fab__count">{loading ? '…' : `SP ${results.length}`}</strong>
+        {asmrUrl && <span class="rwg-fab__audio" aria-hidden="true">♫</span>}
       </button>
       <PopupPanel
         display={open}
         title="Search Result"
-        position={{ right: '20px', bottom: '88px', width: '360px' }}
+        position={popupPosition}
         onClose={() => setOpen(false)}
         onMouseEnter={cancelHide}
         onMouseLeave={startHide}
@@ -133,7 +139,7 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
             {group.state.status === 'error' && <div class="rwg-status"><strong>{localize('search_failed')}</strong><small>{group.state.error.message}</small></div>}
             {group.state.status === 'empty' && <div class="rwg-status">{localize('no_resources')}</div>}
             {group.state.status === 'success' && <ul class="rwg-results">{group.results.map((result) => (
-              <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{result.author} {result.date}</small></a></li>
+              <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{[result.author, normalizeDateOnly(result.date)].filter(Boolean).join(' ')}</small></a></li>
             ))}</ul>}
           </section>)}
           {hasError && <button class="rwg-retry" type="button" onClick={() => { void copyDiagnostics(); }}>

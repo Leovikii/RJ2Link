@@ -1,6 +1,7 @@
 import { AppError } from '../../domain/errors';
 import type { RjCode } from '../../domain/rj-code';
 import type { WorkSummary } from '../../domain/work';
+import { normalizeDateOnly } from '../../domain/date';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -54,7 +55,7 @@ export function parseDlsiteApi2Payload(payload: unknown, rjCode: RjCode): WorkSu
     sales: number(item.dl_count),
     ratingAverage: number(item.rate_average_2dp),
     ratingCount: number(item.rate_count),
-    releaseDate: text(item.regist_date),
+    releaseDate: normalizeDateOnly(text(item.regist_date)),
     ageRating: age === 1 ? 'All' : age === 2 ? 'R15' : age === 3 ? 'R18' : null,
     workType,
     workTypeId,
@@ -75,7 +76,7 @@ export function mergeDlsiteApi1(summary: WorkSummary, payload: unknown): WorkSum
     sales: summary.sales ?? number(data.dl_count),
     ratingAverage: summary.ratingAverage ?? number(data.rate_average_2dp),
     ratingCount: summary.ratingCount ?? number(data.rate_count),
-    releaseDate: summary.releaseDate ?? text(data.regist_date),
+    releaseDate: summary.releaseDate ?? normalizeDateOnly(text(data.regist_date)),
     fileSize: summary.fileSize ?? number(data.contents_file_size),
   };
 }

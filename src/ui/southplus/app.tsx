@@ -22,7 +22,7 @@ interface SouthPlusAppProps {
 export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHide }: SouthPlusAppProps) {
   const popupState = useExternalStore(popup);
   const state = useExternalStore(resources);
-  const position = usePopupPosition(popupState.x, popupState.y);
+  const position = usePopupPosition(popupState.x, popupState.y, 650, 680);
   const [titleCopied, setTitleCopied] = useState(false);
   const copyFeedbackTimer = useRef<number | null>(null);
 
@@ -69,7 +69,13 @@ export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHid
       {work && (
         <div class="rwg-work">
           <div class="rwg-work__hero">
-            <div class="rwg-work__cover"><Cover src={work.imageUrl} alt={work.title} /></div>
+            <div class="rwg-work__cover-column">
+              <div class="rwg-work__cover"><Cover src={work.imageUrl} alt={work.title} /></div>
+              <div class="rwg-actions rwg-actions--cover">
+                <ActionButton theme="dlsite" href={`https://www.dlsite.com/maniax/work/=/product_id/${work.rjCode}.html`} />
+                <ActionButton theme="asmrone" href={asmrUrl} />
+              </div>
+            </div>
             <div class="rwg-work__main">
               <button
                 class={`rwg-work__title${titleCopied ? ' is-copied' : ''}`}
@@ -86,13 +92,9 @@ export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHid
                 {work.workType && <Badge theme="type" text={localizeWorkType(work.workTypeId, work.workType)} />}
                 {work.fileSize !== null && <Badge text={formatFileSize(work.fileSize) ?? ''} />}
               </div>
-              {work.voiceActors.length > 0 && <InfoGroup title={localize('voice_actor')} items={work.voiceActors} />}
-              {work.genres.length > 0 && <InfoGroup title={localize('genre')} items={work.genres} />}
+              {work.voiceActors.length > 0 && <InfoGroup title={localize('voice_actor')} items={work.voiceActors} theme="voice" />}
+              {work.genres.length > 0 && <InfoGroup title={localize('genre')} items={work.genres} theme="genre" />}
             </div>
-          </div>
-          <div class="rwg-actions">
-            <ActionButton theme="dlsite" href={`https://www.dlsite.com/maniax/work/=/product_id/${work.rjCode}.html`} />
-            <ActionButton theme="asmrone" href={asmrUrl} />
           </div>
         </div>
       )}
@@ -100,8 +102,8 @@ export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHid
   );
 }
 
-function InfoGroup({ title, items }: { title: string; items: string[] }) {
-  return <div class="rwg-info"><strong>{title}</strong><div class="rwg-badges">{items.map((item) => <Badge key={item} text={item} theme="genre" />)}</div></div>;
+function InfoGroup({ title, items, theme }: { title: string; items: string[]; theme: 'voice' | 'genre' }) {
+  return <div class="rwg-info"><strong>{title}</strong><div class="rwg-badges">{items.map((item) => <Badge key={item} text={item} theme={theme} />)}</div></div>;
 }
 
 function LoadingCard() {
