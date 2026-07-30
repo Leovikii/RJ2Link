@@ -15,6 +15,7 @@
 - **ASMR ONE Integration**: Features a built-in redirection engine with a one-click shortcut to ASMR ONE online streaming pages.
 - **Native Dark Mode**: Includes a built-in dark mode for South Plus forums to ensure a consistent visual experience that perfectly matches the popup UI.
 - **Auto-Localization**: The interface automatically adapts between English, Simplified Chinese, and Traditional Chinese based on your browser environment.
+- **Smart Metadata Prefetch**: On supported forum pages, up to two nearby RJ codes are prefetched during browser idle time when network conditions allow, reducing the delay of the first preview without preloading images or media.
 
 ## 🚀 Installation
 
@@ -26,12 +27,6 @@ First, install a user script manager such as [Tampermonkey](https://www.tampermo
 - **Method B: Install via GitHub Release**
   Click **[Here](https://github.com/Leovikii/RJ-Warp-Gate/releases/latest/download/rj-warp-gate.user.js)** to install the latest build directly from our GitHub Actions CI/CD.
 
-## 🛠️ Building from source
+## Documentation
 
-```bash
-git clone https://github.com/Leovikii/RJ-Warp-Gate.git
-cd RJ-Warp-Gate
-npm install
-npm run build
-```
-The compiled userscript will be located at `dist/rj-warp-gate.user.js`.
+Development, architecture, and contribution documentation is maintained separately in [`docs/`](./docs/README.md). This README remains focused on users and installation.

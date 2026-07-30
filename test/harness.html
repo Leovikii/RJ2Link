@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RJ Warp Gate local harness</title>
+    <style>
+      body { margin: 0; padding: 32px; min-height: 120vh; color: #222; background: #f5f5f5; font: 16px/1.7 system-ui, sans-serif; }
+      main { max-width: 900px; margin: auto; padding: 24px; background: white; border: 1px solid #ddd; }
+      button, a { font-family: serif; }
+      textarea { width: 100%; min-height: 70px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>本地宿主页</h1>
+      <p id="plain">首屏作品 RJ123456，重复 RJ123456，以及第二候选 RJ234567。</p>
+      <p><a id="dlsite-link" target="_blank" href="https://www.dlsite.com/maniax/work/=/product_id/RJ345678.html">原始 DLsite 链接</a></p>
+      <textarea id="editor">可编辑区域 RJ999999 不应被增强</textarea>
+      <p contenteditable="true" id="editable">contenteditable RJ888888 不应被增强</p>
+      <button id="add-dynamic" type="button">添加动态 RJ</button>
+      <output id="request-count">0</output>
+      <output id="copied-value"></output>
+    </main>
+    <script>
+      const values = new Map();
+      globalThis.__rwgHarness = { requests: [], copied: null };
+      globalThis.GM_info = { script: { name: 'RJ Warp Gate Harness' } };
+      globalThis.GM_getValue = (key, fallback) => values.has(key) ? values.get(key) : fallback;
+      globalThis.GM_setValue = (key, value) => { values.set(key, value); };
+      globalThis.GM_deleteValue = (key) => { values.delete(key); };
+      globalThis.GM_listValues = () => [...values.keys()];
+      globalThis.GM_setClipboard = (value) => {
+        globalThis.__rwgHarness.copied = value;
+        document.querySelector('#copied-value').textContent = value;
+      };
+      globalThis.GM_registerMenuCommand = () => 1;
+      globalThis.GM_unregisterMenuCommand = () => {};
+      const request = (options) => {
+        globalThis.__rwgHarness.requests.push({ method: options.method || 'GET', url: options.url });
+        document.querySelector('#request-count').textContent = String(globalThis.__rwgHarness.requests.length);
+        let aborted = false;
+        const timer = setTimeout(() => {
+          if (aborted) return;
+          const code = options.url.match(/(?:R[JE]|[VB]J)\d{6}(?:\d{2})?/i)?.[0]?.toUpperCase() || 'RJ123456';
+          const isAsmr = options.url.includes('asmr-200.com');
+          const isApi1 = options.url.includes('/product/info/ajax');
+          const payload = isAsmr
+            ? '{}'
+            : isApi1
+              ? JSON.stringify({ [code]: { work_name: `API1 ${code}`, dl_count: 42 } })
+              : JSON.stringify([{ work_name: `Harness Work ${code}`, work_type: 'SOU', maker_name: 'Harness Circle', dl_count: 42, rate_average_2dp: 4.75, rate_count: 12, regist_date: '2026-07-30', contents_file_size: 1048576, genres: [{ name: 'ASMR' }], creaters: { voice_by: [{ name: 'Voice Actor' }] } }]);
+          options.onload?.({ readyState: 4, status: 200, statusText: 'OK', responseText: payload, finalUrl: options.url, responseHeaders: '' });
+        }, 30);
+        return { abort() { aborted = true; clearTimeout(timer); options.onabort?.({}); } };
+      };
+      globalThis.GM_xmlhttpRequest = request;
+      globalThis.GM = { xmlHttpRequest: request };
+      document.querySelector('#add-dynamic').addEventListener('click', () => {
+        const paragraph = document.createElement('p');
+        paragraph.id = 'dynamic-code';
+        paragraph.textContent = '动态内容 RJ456789';
+        document.querySelector('main').append(paragraph);
+      });
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

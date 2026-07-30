@@ -7,14 +7,12 @@ on:
     paths-ignore:
       - '**/*.md'
       - 'assets/**'
-      - 'test/**'
   pull_request:
     branches:
       - main
     paths-ignore:
       - '**/*.md'
       - 'assets/**'
-      - 'test/**'
 
 permissions:
   contents: write
@@ -36,6 +34,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
 
       - name: Build
         run: npm run build

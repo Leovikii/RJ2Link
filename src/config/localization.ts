@@ -1,5 +1,3 @@
-import { Popup } from '../sites/southplus/popup';
-
 export const localizationMap = {
     rj_warp_gate_title: {
         zh_CN: "RJ号折跃门",
@@ -415,7 +413,7 @@ export const localizationMap = {
     },
 
     get: function (key: any) {
-        let lang = navigator.language.toLowerCase();
+        const lang = navigator.language.toLowerCase();
         let langKey = "en_US";
         if (lang.includes("zh")) {
             if (lang.includes("cn") || lang.includes("sg") || lang === "zh") {

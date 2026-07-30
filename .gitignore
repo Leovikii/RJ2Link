@@ -26,4 +26,4 @@ dist-ssr
 # Temporaries
 cut_scraper.py
 read_transcript.py
-test/
+.cache/

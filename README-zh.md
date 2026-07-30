@@ -13,6 +13,7 @@
 - **ASMR ONE 快捷试听**：内置跳转引擎，提供一键直达 ASMR ONE 在线播放页面的快捷入口。
 - **原生夜间模式**：内置南+论坛全局夜间模式，提供一致的视觉体验，并兼容现有暗色主题弹窗。
 - **多语言适配**：根据浏览器语言环境，界面自动在简体中文、繁体中文和英文间智能切换。
+- **智能元数据预取**：在网络条件允许时，脚本会利用浏览器空闲时间预取页面附近最多两个 RJ 号的轻量元数据，降低首次打开预览的延迟，同时不会预加载图片或媒体资源。
 
 ## 🚀 安装指南
 
@@ -24,14 +25,6 @@
 - **方式 B：通过 GitHub Release 安装**
   点击 **[此处](https://github.com/Leovikii/RJ-Warp-Gate/releases/latest/download/rj-warp-gate.user.js)** 安装由 GitHub Actions 全自动打包的最新主线版本。
 
-## 🛠️ 本地编译
+## 开发文档
 
-如果您希望自行编译或进行二次开发：
-
-```bash
-git clone https://github.com/Leovikii/RJ-Warp-Gate.git
-cd RJ-Warp-Gate
-npm install
-npm run build
-```
-编译成功后，产物脚本将生成在 `dist/rj-warp-gate.user.js`。
+架构设计、开发规范和版本计划已单独收束到 [`docs/`](./docs/README.md)。本 README 继续只面向脚本用户和安装场景。
