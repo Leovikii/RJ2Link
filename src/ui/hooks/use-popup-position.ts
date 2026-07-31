@@ -42,8 +42,26 @@ interface AnchorRect {
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.max(minimum, Math.min(value, Math.max(minimum, maximum)));
 
+const LEGACY_WIDE_LAYOUT_RATIO = 1.25;
+
 export const hasMobileUserAgent = (userAgent: string, userAgentDataMobile = false): boolean =>
   userAgentDataMobile || /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
+
+export const resolveLayoutViewportHeight = (
+  rootClientHeight: number,
+  bodyIsScrollingElement: boolean,
+  bodyClientHeight: number,
+  innerHeight: number,
+  innerWidth: number,
+  visualWidth: number,
+): number => {
+  if (bodyIsScrollingElement) {
+    const layoutToVisualWidthRatio = visualWidth > 0 ? innerWidth / visualWidth : 1;
+    if (layoutToVisualWidthRatio >= LEGACY_WIDE_LAYOUT_RATIO) return innerHeight;
+    return bodyClientHeight > 0 ? bodyClientHeight : innerHeight;
+  }
+  return rootClientHeight > 0 ? rootClientHeight : innerHeight;
+};
 
 export function calculatePopupViewportState(metrics: PopupViewportMetrics): PopupViewportState {
   const compactWidth = metrics.layoutWidth <= 768 || metrics.visualWidth <= 768;
@@ -75,7 +93,14 @@ export function calculatePopupViewportState(metrics: PopupViewportMetrics): Popu
 
 function readPopupViewportState(): PopupViewportState {
   const visualViewport = window.visualViewport;
-  const layoutHeight = document.documentElement.clientHeight || window.innerHeight;
+  const layoutHeight = resolveLayoutViewportHeight(
+    document.documentElement.clientHeight,
+    document.scrollingElement === document.body,
+    document.body.clientHeight,
+    window.innerHeight,
+    window.innerWidth,
+    visualViewport?.width ?? window.innerWidth,
+  );
   return calculatePopupViewportState({
     layoutWidth: window.innerWidth,
     layoutHeight,

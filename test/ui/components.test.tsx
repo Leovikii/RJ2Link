@@ -5,6 +5,7 @@ import { PopupPanel } from '../../src/ui/components/popup-panel';
 import {
   calculateAttachedPopupPosition,
   hasMobileUserAgent,
+  resolveLayoutViewportHeight,
   calculatePopupViewportState,
   calculatePopupPosition,
 } from '../../src/ui/hooks/use-popup-position';
@@ -69,6 +70,71 @@ describe('Preact shared components', () => {
     expect(hasMobileUserAgent('Mozilla/5.0 (Linux; Android 16; Pixel 9)')).toBe(true);
     expect(hasMobileUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toBe(false);
     expect(hasMobileUserAgent('desktop browser', true)).toBe(true);
+  });
+
+  it('uses the fixed-position containing block height for quirks-mode mobile pages', () => {
+    expect(resolveLayoutViewportHeight(10_624, true, 915, 2_084, 938, 412)).toBe(2_084);
+    expect(resolveLayoutViewportHeight(10_624, true, 375, 390, 844, 828.67)).toBe(375);
+    expect(resolveLayoutViewportHeight(829, false, 2_120, 844, 390, 374.67)).toBe(829);
+    expect(resolveLayoutViewportHeight(0, false, 2_120, 844, 390, 374.67)).toBe(844);
+  });
+
+  it('aligns a quirks-mode mobile popup with a scrolled visual viewport', () => {
+    const layoutHeight = resolveLayoutViewportHeight(
+      10_624,
+      true,
+      915,
+      2_084,
+      938,
+      412,
+    );
+    expect(calculatePopupViewportState({
+      layoutWidth: 938,
+      layoutHeight,
+      hasViewportMeta: true,
+      mobileUserAgent: true,
+      screenWidth: 412,
+      screenHeight: 915,
+      visualWidth: 412,
+      visualHeight: 915.3333,
+      visualOffsetLeft: 0,
+      visualOffsetTop: 255.3333,
+      visualScale: 1,
+      coarsePointer: true,
+    })).toMatchObject({
+      mobile: true,
+      bottom: 913,
+      width: 412,
+    });
+  });
+
+  it('removes the horizontal scrollbar gutter from a quirks-mode landscape popup', () => {
+    const layoutHeight = resolveLayoutViewportHeight(
+      10_624,
+      true,
+      375,
+      390,
+      844,
+      828.67,
+    );
+    expect(calculatePopupViewportState({
+      layoutWidth: 844,
+      layoutHeight,
+      hasViewportMeta: false,
+      mobileUserAgent: true,
+      screenWidth: 844,
+      screenHeight: 390,
+      visualWidth: 828.67,
+      visualHeight: 374.67,
+      visualOffsetLeft: 0,
+      visualOffsetTop: 0,
+      visualScale: 1,
+      coarsePointer: true,
+    })).toMatchObject({
+      mobile: true,
+      bottom: 0,
+      width: 828,
+    });
   });
 
   it('attaches a resource popup above a bottom-right FAB', () => {

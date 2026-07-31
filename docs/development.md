@@ -90,7 +90,7 @@ npm run build
 - 优先使用事件委托，不为每个 RJ 元素重复注册匿名监听器。
 - 每个页面的 Preact Root 数量保持固定，不随 RJ 数量增长。
 - 读取布局和写入样式分阶段执行，避免循环中交替调用 `getBoundingClientRect()` 和样式写入。
-- 移动弹窗不能只依据 layout viewport 宽度判断；南+等无 viewport 声明的旧页面必须结合 `visualViewport`、紧凑横屏和粗指针设备识别。弹窗应限制在实际可视区域内，底部偏移须以排除滚动条槽的 `documentElement.clientHeight` 作为布局容器高度，不能通过新增或改写宿主页面的 viewport meta 解决，也不得在打开时扩大 `documentElement.scrollWidth` 或改变页面缩放。
+- 移动弹窗不能只依据 layout viewport 宽度判断；南+等无 viewport 声明的旧页面必须结合 `visualViewport`、紧凑横屏和粗指针设备识别。弹窗应限制在实际可视区域内，底部偏移须使用 `position: fixed` 的实际包含块高度：标准模式取排除滚动条槽的 `documentElement.clientHeight`；`document.scrollingElement === document.body` 的 BackCompat/无 doctype 页面若布局宽度相对 visual viewport 明显放大（当前阈值 1.25）则取 `window.innerHeight`，接近 1:1 时取排除横向滚动条槽的 `body.clientHeight`，再结合 `visualViewport.offsetTop` 与 `visualViewport.height` 计算。不能通过新增或改写宿主页面的 viewport meta 解决，也不得在打开时扩大 `documentElement.scrollWidth` 或改变页面缩放。
 - 无 viewport 的手持设备必须直接进入移动底部弹窗；粗指针只以主指针的 `matchMedia('(pointer: coarse)')` 为准，并以浏览器明确的 mobile UA 信号兜底。`navigator.maxTouchPoints` 只能表示设备支持触控，不能单独用来判定手机，否则会把带触摸屏、主指针仍为 fine 且支持 hover 的桌面设备误判为移动端。
 - 桌面弹窗在点击点附近翻转时不得用固定预估高度反推 `top`。点击点下方空间不足时应以 `bottom` 锚定并向上自然展开，同时按该侧实际可用空间设置 `max-height`，以兼容系统 DPI 缩放、内容高度变化和长列表滚动位置。
 - 动画应支持 `prefers-reduced-motion`。
