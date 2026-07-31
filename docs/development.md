@@ -150,6 +150,15 @@ npm run build
 
 CI 至少执行 `typecheck`、`test` 和 `build`。文档提交可以跳过完整发布，但链接和 Markdown 仍需检查。
 
+### CI 与正式发布
+
+- 所有指向 `main` 的 pull request（包括纯 README/资源变更）都必须运行名为 `quality-checks` 的必需状态检查；仓库 Ruleset 应选择该检查。该任务只执行质量检查，不创建或更新 GitHub Release。
+- 纯 Markdown/展示资源合并后的 `main` push 可以跳过重复质量任务；包含代码、配置或工作流的普通 `main` push 仍执行质量检查，但不会发布。
+- 只有推送与 `package.json` 版本一致的 `v*` tag 才进入正式发布任务；例如 `package.json` 为 `1.3.1` 时，只接受 `v1.3.1`。
+- tag 构建通过同一质量任务生成 userscript，并通过短期 workflow artifact 原样交给发布任务，避免发布阶段二次构建。
+- 发布任务检测到同名 GitHub Release 已存在时必须明确跳过，不能覆盖既有说明或附件。
+- README、Markdown 文档和展示资源变更在 PR 阶段仍执行必需检查；相对链接和三语言一致性还需在本地检查。
+
 ## 11. 日志
 
 - 生产构建默认关闭 debug 日志。

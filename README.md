@@ -12,13 +12,11 @@ Project homepage: [GitHub](https://github.com/Leovikii/RJ-Warp-Gate). The usersc
 
 ## 🌟 Features
 
-- **Metadata Preview Card**: Click any RJ code in the forum to instantly preview DLsite metadata via a viewport-safe, single-page card without internal scrolling, including cover art, title, voice actors, visually distinct category tags, date-only release information, and sales data. Mobile uses a visual-viewport bottom sheet that also works on legacy South Plus pages without a viewport declaration and does not change host-page zoom or horizontal width; portrait stays within half the visible height, while compact landscape adapts to the available height. Scrolling dismisses the sheet with a matching slide-down animation, and a mobile-only title clamp prevents long forum titles from causing horizontal scrolling or overlapping nearby rows.
-- **DLsite Global FAB**: Automatically injected into DLsite work pages; hover or click it to inspect ASMR ONE and South Plus results. The bottom-right control uses compact source-status chips, fades in without shifting on hover, can be dragged, remembers separate desktop and mobile positions, and keeps its result panel attached inside the viewport. Long result lists scroll independently. South Plus searches are queued across tabs to respect the forum cooldown; compact per-source retry controls only rerun the failed/empty source, and privacy-safe diagnostics appear only for actionable network failures.
-- **Dedicated SVG Icon**: The script and floating control share a lightweight, optically centered RJ vector mark that stays crisp at every display scale.
-- **ASMR ONE Integration**: Features a built-in redirection engine with a one-click shortcut to ASMR ONE online streaming pages.
-- **Native Dark Mode**: Includes a built-in dark mode for South Plus forums to ensure a consistent visual experience that perfectly matches the popup UI.
-- **Auto-Localization**: The interface automatically adapts between English, Simplified Chinese, and Traditional Chinese based on your browser environment.
-- **Smart Metadata Prefetch**: On supported forum pages, up to two nearby RJ codes are prefetched during browser idle time when network conditions allow, reducing the delay of the first preview without preloading images or media.
+- **Forum previews**: Click an RJ code on South Plus to view its cover, title, cast, tags, release date, sales, and quick links.
+- **Cross-site search**: Open the floating control on DLsite to find matching South Plus posts and ASMR ONE listening pages.
+- **Mobile-friendly UI**: Popups stay inside the visible screen, and long forum titles no longer stretch the page horizontally.
+- **Faster first preview**: Nearby metadata can load quietly in advance when the browser and network are idle.
+- **Dark mode and languages**: Includes a South Plus dark theme and automatically supports English, Simplified Chinese, and Traditional Chinese.
 
 ## 🚀 Installation
 
@@ -29,10 +27,6 @@ First, install a user script manager such as [Tampermonkey](https://www.tampermo
 
 - **Method B: Install via GitHub Release**
   Click **[Here](https://github.com/Leovikii/RJ-Warp-Gate/releases/latest/download/rj-warp-gate.user.js)** to install the latest build directly from our GitHub Actions CI/CD.
-
-## Documentation
-
-Development, architecture, and contribution documentation is maintained separately in [`docs/`](./docs/README.md). This README remains focused on users and installation.
 
 ## License
 
