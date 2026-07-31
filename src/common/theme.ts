@@ -2,7 +2,7 @@ import { localize } from '../config/localization';
 
 const STORAGE_KEY = 'sp_dark_mode_enabled';
 
-let menuCommandId: any = null;
+let menuCommandId: number | null = null;
 let styleElement: HTMLStyleElement | null = null;
 let metaElement: HTMLMetaElement | null = null;
 

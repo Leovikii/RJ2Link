@@ -167,3 +167,27 @@ CI 至少执行 `typecheck`、`test` 和 `build`。文档提交可以跳过完�
 - 用户可见行为变化必须同步三个语言版本 README。
 - 发布前检查 userscript 的 `homepageURL`、`supportURL` 与 `package.json` 仓库信息保持一致，并清理不再参与构建、测试、文档或人工冒烟验证的旧快照和重复资源。
 - 项目许可证统一使用 SPDX 标识 `GPL-3.0-only`；发布前必须核对根 `LICENSE`、`package.json`、根包 lockfile 字段、userscript `@license` 和三语言 README，且不得改写第三方依赖各自的许可证字段。
+
+## 13. 正式版候选检查
+
+从干净依赖树开始执行完整门禁：
+
+```bash
+npm ci
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+npm audit --omit=dev
+npm audit
+git diff --check
+```
+
+`npm audit --omit=dev` 必须无生产依赖漏洞。完整 `npm audit` 的开发工具链告警需要逐项记录；若上游只提供破坏性升级，不得为了得到零告警而绕过锁文件或引入未经验证的主版本。构建后还必须检查：
+
+- `dist/rj-warp-gate.user.js` 的版本、SHA-256、原始体积和 gzip 体积。
+- 产物不含 Vue、Preact debug/devtools 或 `sourceMappingURL`。
+- `@match`、`@connect`、`@grant` 与实际站点和 GM 调用一致，不使用 `@connect *`。
+- 39 个可导入生产模块均可由 `src/main.ts` 静态到达，`src/types/globals.d.ts` 作为独立环境声明保留；新增删除操作必须重新核对入口和引用链。
+- 两份 HTML harness 继续分别覆盖 South Plus 与 DLsite，本地夹具不作为可清理的临时文件。
+- 三语言 README 的用户可见行为一致，`docs/` 中不再保留已完成事项的未来式状态。

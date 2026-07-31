@@ -1,4 +1,7 @@
-export const localizationMap = {
+type Locale = 'zh_CN' | 'zh_TW' | 'en_US';
+type LocalizedText = Record<Locale, string>;
+
+const localizationMap = {
     rj_warp_gate_title: {
         zh_CN: "RJ号折跃门",
         zh_TW: "RJ號折躍門",
@@ -427,26 +430,17 @@ export const localizationMap = {
         zh_CN: "🌙 切换至夜间模式",
         zh_TW: "🌙 切換至夜間模式",
         en_US: "🌙 Switch to Dark Mode"
-    },
-
-    get: function (key: any) {
-        const lang = navigator.language.toLowerCase();
-        let langKey = "en_US";
-        if (lang.includes("zh")) {
-            if (lang.includes("cn") || lang.includes("sg") || lang === "zh") {
-                langKey = "zh_CN";
-            } else {
-                langKey = "zh_TW";
-            }
-        }
-        return typeof key === "string" ? (localizationMap as any)[key]?.[langKey] : key[langKey];
     }
-};
+} satisfies Record<string, LocalizedText>;
 
-export function localize(key: any) {
-    return localizationMap.get(key);
+type LocalizationKey = keyof typeof localizationMap;
+
+function getLocale(): Locale {
+    const lang = navigator.language.toLowerCase();
+    if (!lang.includes('zh')) return 'en_US';
+    return lang.includes('cn') || lang.includes('sg') || lang === 'zh' ? 'zh_CN' : 'zh_TW';
 }
 
-export function localizePopup(key: any) {
-    return localizationMap.get(key);
+export function localize(key: LocalizationKey): string {
+    return localizationMap[key][getLocale()];
 }

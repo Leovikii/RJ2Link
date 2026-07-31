@@ -164,6 +164,6 @@ function localizeWorkType(id: number, fallback: string): string {
     'work_type_voice', 'work_type_game', 'work_type_comic', 'work_type_illustration',
     'work_type_novel', 'work_type_video', 'work_type_music', 'work_type_tool',
     'work_type_voice_comic', 'work_type_other',
-  ];
+  ] as const;
   return keys[id] ? localize(keys[id]) : fallback;
 }

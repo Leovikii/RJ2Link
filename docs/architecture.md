@@ -1,10 +1,10 @@
 # 目标架构
 
-状态：v1.3.0 主体架构已实现，待真实站点冒烟验证。
+状态：v1.3.0 架构、迁移和发布候选验证已完成。
 
 ## 1. 重构目标
 
-v1.3.0 将先解耦业务核心，再把 Vue UI 迁移到 Preact。重构不以逐文件翻译为目标，而是解决以下问题：
+v1.3.0 先解耦业务核心，再把 Vue UI 迁移到 Preact。重构没有逐文件翻译旧组件，而是解决了以下问题：
 
 - GM API、网络请求、缓存和 UI 状态相互耦合。
 - 请求缺少统一超时、取消、去重和结构化错误。
@@ -60,63 +60,24 @@ export interface KeyValueStorage {
 
 生产环境使用 Tampermonkey 适配器，测试使用内存适配器。业务模块不得判断 `typeof GM_getValue`。
 
-## 3. 建议目录
+## 3. 实际目录
 
 ```text
 src/
-├─ domain/
-│  ├─ rj-code.ts
-│  ├─ work.ts
-│  ├─ resource.ts
-│  ├─ query-state.ts
-│  └─ errors.ts
-├─ infrastructure/
-│  ├─ gm/
-│  │  ├─ http-client.ts
-│  │  ├─ storage.ts
-│  │  ├─ clipboard.ts
-│  │  └─ tabs.ts
-│  ├─ cache/
-│  │  ├─ cache-keys.ts
-│  │  └─ query-cache.ts
-│  └─ coordination/
-│     └─ southplus-rate-limiter.ts
-├─ services/
-│  ├─ provider.ts
-│  ├─ provider-registry.ts
-│  └─ work-query-service.ts
-├─ providers/
-│  ├─ dlsite/
-│  │  ├─ metadata-provider.ts
-│  │  └─ parser.ts
-│  ├─ southplus/
-│  │  ├─ resource-provider.ts
-│  │  └─ parser.ts
-│  └─ asmr-one/
-│     └─ resource-provider.ts
-├─ application/
-│  ├─ popup-controller.ts
-│  ├─ resource-controller.ts
-│  └─ prefetch-controller.ts
-├─ sites/
-│  ├─ southplus/
-│  │  ├─ adapter.ts
-│  │  ├─ parser.ts
-│  │  ├─ observer.ts
-│  │  └─ mount.tsx
-│  └─ dlsite/
-│     ├─ adapter.ts
-│     └─ mount.tsx
-├─ ui/
-│  ├─ components/
-│  ├─ hooks/
-│  ├─ southplus/
-│  ├─ dlsite/
-│  └─ styles/
+├─ application/       # 控制器与预取编排
+├─ common/            # 主题等跨站能力
+├─ config/            # 本地化配置
+├─ domain/            # RJ、作品、错误与查询状态
+├─ infrastructure/    # cache、coordination、GM、HTTP、logging、storage
+├─ providers/         # DLsite、South Plus、ASMR ONE 数据来源
+├─ services/          # Provider 协议与显式注册表
+├─ sites/             # South Plus、DLsite 宿主适配器
+├─ types/             # userscript/浏览器环境声明
+├─ ui/                # Preact 组件、Hook、站点应用与统一样式
 └─ main.ts
 ```
 
-目录可以在迁移期间逐步形成，但依赖方向从第一阶段开始执行。
+生产入口静态可达性审计覆盖 `src/` 的 39 个可导入生产模块（另有一个 `src/types/globals.d.ts` 环境声明文件），39 个均可由 `src/main.ts` 到达，没有遗留的不可达生产模块。
 
 ## 4. 领域模型
 
@@ -312,14 +273,27 @@ DLsite 适配器负责：
 
 适配器不得自行获取作品详情；它只能调用应用控制器。
 
-## 10. 迁移策略
+## 10. 已完成的迁移顺序
 
-1. 先补类型、测试和 GM 端口。
+1. 补齐类型、测试和 GM 端口。
 2. 将网络、缓存、限流和纯解析器迁出 Vue 代码。
-3. 建立框架无关控制器并让现有 Vue UI 使用它。
+3. 建立框架无关控制器并通过过渡适配器接入旧 UI。
 4. 引入 Preact 并迁移共享组件。
 5. 迁移 DLsite UI。
 6. 迁移 South Plus UI。
-7. 删除 Vue、旧 store 和兼容桥接层。
+7. 删除 Vue、旧 store、兼容桥接层和迁移期类型残留。
 
-正式发布物不得长期同时包含 Vue 和 Preact。迁移分支可以暂时双框架运行，但发布候选构建必须移除 Vue runtime。
+v1.3.0 发布候选只包含 Preact runtime；生产依赖、Vite 配置、源码和构建产物均没有 Vue runtime 或 Vue 构建插件。
+
+## 11. Vue → Preact 性能与成本审计
+
+| 指标 | v1.2 基线 | v1.3.0 RC | 变化 |
+| --- | ---: | ---: | ---: |
+| userscript 原始体积 | 约 314 kB | 130.14 kB | 约 -58.6% |
+| gzip 体积 | 约 75.9 kB | 35.67 kB | 约 -53.0% |
+
+主要收益：Vue runtime 已完全移除；每页 Root 数量固定，不随 RJ 数量增长；South Plus 以事件委托替代逐 RJ 监听器，并用一个 MutationObserver 批处理新增节点；控制器、Provider、缓存和网络层保持框架无关；请求去重、取消、超时和 generation 保护减少重复工作及旧响应覆盖。
+
+主要成本与权衡：分层控制器和诊断能力增加了少量对象分配与维护代码；单文件 userscript 会静态包含两个站点适配器，因此每个页面都会解析当前页面用不到的另一套适配器代码，考虑到 userscript 不能可靠拆成按需 chunk，v1.3.0 不为此引入动态加载复杂度；South Plus 初次挂载仍需一次完整 TreeWalker 扫描，后续才转为增量批处理；最多两个 DLsite 元数据预取会增加受预算控制的后台请求；移动视口兼容增加固定数量的 resize、orientation 和 visualViewport 监听器，但都不随 RJ 数量增长。
+
+本地浏览器夹具在 Vite 开发模式下的冷加载 trace 为 LCP 66 ms、CLS 0.0003、最长关键请求链 76 ms，DevTools 估算可节省 0 ms，没有发现初始化主线程或布局瓶颈。该 trace 包含 HMR、Preact debug/prefresh 和未打包模块，只用于验证交互初始化，不代表生产 userscript 的网络依赖成本；生产性能以构建体积、固定 Root/监听器数量和请求预算为主要基线。
