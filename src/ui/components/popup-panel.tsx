@@ -1,4 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact';
+import { usePopupViewport } from '../hooks/use-popup-position';
 
 interface PopupPanelProps {
   display: boolean;
@@ -23,11 +24,12 @@ export function PopupPanel({
   onMouseLeave,
   children,
 }: PopupPanelProps) {
+  const viewport = usePopupViewport();
   if (!display) return null;
   return (
     <section
-      class={`rwg-popup rwg-theme-${theme}${className ? ` ${className}` : ''}`}
-      style={position}
+      class={`rwg-popup rwg-theme-${theme}${viewport.mobile ? ' rwg-popup--mobile' : ''}${className ? ` ${className}` : ''}`}
+      style={viewport.mobile ? { ...position, ...viewport.style } : position}
       role="dialog"
       aria-modal="false"
       aria-label={title || 'RJ Warp Gate'}

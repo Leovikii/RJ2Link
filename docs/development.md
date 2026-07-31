@@ -25,7 +25,7 @@ npm run build
 - `npm run build` 生成 `dist/rj-warp-gate.user.js`。
 - 使用 `npm ci` 验证锁文件，只有明确更新依赖时才运行会修改锁文件的安装命令。
 - v1.3.0 已提供稳定的 typecheck/test/lint/build 命令；交付记录必须写明实际执行结果，不能用 Vite 构建代替类型检查或测试。
-- `test/harness.html` 与 `test/dlsite-harness.html` 是保留的本地浏览器冒烟夹具：运行 `npm run dev` 后分别模拟论坛页和 DLsite 页。它们不属于 Vitest fixture，也不得当作无引用文件删除。
+- `test/harness.html` 与 `test/dlsite-harness.html` 是保留的本地浏览器冒烟夹具：运行 `npm run dev` 后分别模拟论坛页和 DLsite 页。论坛夹具的 `?legacy-mobile=1` 模式用于复现南+缺少 viewport 声明、移动设备仍保留桌面布局视口的场景，`?bottom-anchor=1` 模式用于复现长列表底部点击和桌面弹窗向上展开。它们不属于 Vitest fixture，也不得当作无引用文件删除。
 
 ## 2. TypeScript
 
@@ -90,6 +90,9 @@ npm run build
 - 优先使用事件委托，不为每个 RJ 元素重复注册匿名监听器。
 - 每个页面的 Preact Root 数量保持固定，不随 RJ 数量增长。
 - 读取布局和写入样式分阶段执行，避免循环中交替调用 `getBoundingClientRect()` 和样式写入。
+- 移动弹窗不能只依据 layout viewport 宽度判断；南+等无 viewport 声明的旧页面必须结合 `visualViewport`、紧凑横屏和粗指针设备识别。弹窗应限制在实际可视区域内，底部偏移须以排除滚动条槽的 `documentElement.clientHeight` 作为布局容器高度，不能通过新增或改写宿主页面的 viewport meta 解决，也不得在打开时扩大 `documentElement.scrollWidth` 或改变页面缩放。
+- 无 viewport 的手持设备必须直接进入移动底部弹窗；粗指针只以主指针的 `matchMedia('(pointer: coarse)')` 为准，并以浏览器明确的 mobile UA 信号兜底。`navigator.maxTouchPoints` 只能表示设备支持触控，不能单独用来判定手机，否则会把带触摸屏、主指针仍为 fine 且支持 hover 的桌面设备误判为移动端。
+- 桌面弹窗在点击点附近翻转时不得用固定预估高度反推 `top`。点击点下方空间不足时应以 `bottom` 锚定并向上自然展开，同时按该侧实际可用空间设置 `max-height`，以兼容系统 DPI 缩放、内容高度变化和长列表滚动位置。
 - 动画应支持 `prefers-reduced-motion`。
 - 图片默认懒加载；后台 RJ 预取不预取封面图片。
 

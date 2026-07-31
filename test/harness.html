@@ -3,9 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      if (new URLSearchParams(location.search).has('legacy-mobile')) {
+        document.querySelector('meta[name="viewport"]')?.remove();
+        const nativeMatchMedia = window.matchMedia.bind(window);
+        window.matchMedia = (query) => query === '(pointer: coarse)'
+          ? {
+              matches: true,
+              media: query,
+              onchange: null,
+              addListener() {},
+              removeListener() {},
+              addEventListener() {},
+              removeEventListener() {},
+              dispatchEvent() { return false; },
+            }
+          : nativeMatchMedia(query);
+        Object.defineProperty(window.screen, 'width', { configurable: true, value: 390 });
+        Object.defineProperty(window.screen, 'height', { configurable: true, value: 844 });
+      }
+      if (new URLSearchParams(location.search).has('bottom-anchor')) {
+        document.documentElement.classList.add('bottom-anchor');
+      }
+    </script>
     <title>RJ Warp Gate local harness</title>
     <style>
       body { margin: 0; padding: 32px; min-height: 120vh; color: #222; background: #f5f5f5; font: 16px/1.7 system-ui, sans-serif; }
+      html.bottom-anchor body { padding-top: 512px; min-height: calc(120vh + 480px); }
       main { max-width: 900px; margin: auto; padding: 24px; background: white; border: 1px solid #ddd; }
       button, a { font-family: serif; }
       textarea { width: 100%; min-height: 70px; }
