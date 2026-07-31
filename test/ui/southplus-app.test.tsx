@@ -1,0 +1,109 @@
+import { cleanup, render, screen, waitFor } from '@testing-library/preact';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PopupController } from '../../src/application/popup-controller';
+import { ResourceController } from '../../src/application/resource-controller';
+import { parseRjCode } from '../../src/domain/rj-code';
+import type { WorkSummary } from '../../src/domain/work';
+import type { TextClipboard } from '../../src/infrastructure/gm/clipboard';
+import { ProviderRegistry } from '../../src/services/provider-registry';
+import { SouthPlusApp } from '../../src/ui/southplus/app';
+
+const code = parseRjCode('RJ123456')!;
+const work: WorkSummary = {
+  rjCode: code,
+  title: 'Test Work',
+  imageUrl: 'https://example.test/cover.jpg',
+  circle: 'Test Circle',
+  sales: 42,
+  ratingAverage: 4.5,
+  ratingCount: 10,
+  releaseDate: '2026-07-25 00:00:00',
+  ageRating: 'R18',
+  workType: 'Voice / ASMR',
+  workTypeId: 0,
+  fileSize: 1_048_576,
+  voiceActors: ['Voice Actor'],
+  genres: ['Genre Tag'],
+  isGirls: false,
+};
+
+beforeEach(() => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+});
+
+afterEach(cleanup);
+
+describe('South Plus metadata popup', () => {
+  it('uses a content-shaped two-column skeleton while metadata is loading', async () => {
+    let resolveWork!: (value: WorkSummary) => void;
+    const pendingWork = new Promise<WorkSummary>((resolve) => { resolveWork = resolve; });
+    const registry = new ProviderRegistry()
+      .registerMetadata({ id: 'dlsite', supports: () => true, getWork: async () => pendingWork });
+    const resources = new ResourceController(registry);
+    const popup = new PopupController();
+    const clipboard: TextClipboard = { writeText: vi.fn(async () => undefined) };
+    popup.open(code, { left: 100, top: 100, width: 20, height: 20 } as DOMRect, true);
+    const { container } = render(
+      <SouthPlusApp
+        popup={popup}
+        resources={resources}
+        clipboard={clipboard}
+        cancelHide={() => {}}
+        startHide={() => {}}
+      />,
+    );
+
+    await waitFor(() => expect(container.querySelector('.rwg-work--loading')).toBeTruthy());
+    const skeleton = container.querySelector('.rwg-work--loading');
+    expect(skeleton?.querySelector('.rwg-skeleton--cover')).toBeTruthy();
+    expect(skeleton?.querySelectorAll('.rwg-skeleton--action')).toHaveLength(2);
+    expect(skeleton?.querySelectorAll('.rwg-skeleton-info')).toHaveLength(2);
+    expect(skeleton?.querySelectorAll('.rwg-skeleton--chip')).toHaveLength(6);
+
+    resolveWork(work);
+    await screen.findByText('Test Work');
+    resources.dispose();
+  });
+
+  it('places actions under the cover and differentiates voice and genre tags', async () => {
+    const registry = new ProviderRegistry()
+      .registerMetadata({ id: 'dlsite', supports: () => true, getWork: async () => work })
+      .registerResource({
+        id: 'asmr-one',
+        displayName: 'ASMR ONE',
+        supports: () => true,
+        search: async () => [],
+      });
+    const resources = new ResourceController(registry);
+    const popup = new PopupController();
+    const clipboard: TextClipboard = { writeText: vi.fn(async () => undefined) };
+    popup.open(code, { left: 100, top: 100, width: 20, height: 20 } as DOMRect, true);
+    const { container } = render(
+      <SouthPlusApp
+        popup={popup}
+        resources={resources}
+        clipboard={clipboard}
+        cancelHide={() => {}}
+        startHide={() => {}}
+      />,
+    );
+
+    await screen.findByText('Test Work');
+    await waitFor(() => expect(container.querySelector('.rwg-work__cover-column')).toBeTruthy());
+    expect(screen.getByRole('dialog').classList.contains('rwg-popup--work')).toBe(true);
+    const coverColumn = container.querySelector('.rwg-work__cover-column')!;
+    expect(coverColumn.querySelectorAll('.rwg-action')).toHaveLength(2);
+    expect(coverColumn.querySelector('.rwg-external-icon')).toBeTruthy();
+    expect(coverColumn.querySelector('.rwg-unavailable-icon')).toBeTruthy();
+    expect(screen.getByText('2026-07-25')).toBeTruthy();
+    expect(screen.queryByText(/00:00:00/)).toBeNull();
+    const voiceGroup = container.querySelector('.rwg-badge--voice')?.closest('.rwg-info');
+    const genreGroup = container.querySelector('.rwg-badge--genre')?.closest('.rwg-info');
+    expect(voiceGroup?.firstElementChild?.tagName).toBe('STRONG');
+    expect(voiceGroup?.querySelector('.rwg-badge--voice')?.textContent).toBe('Voice Actor');
+    expect(genreGroup?.firstElementChild?.tagName).toBe('STRONG');
+    expect(genreGroup?.querySelector('.rwg-badge--genre')?.textContent).toBe('Genre Tag');
+    resources.dispose();
+  });
+});

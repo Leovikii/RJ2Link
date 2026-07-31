@@ -1,6 +1,7 @@
-import { Popup } from '../sites/southplus/popup';
+type Locale = 'zh_CN' | 'zh_TW' | 'en_US';
+type LocalizedText = Record<Locale, string>;
 
-export const localizationMap = {
+const localizationMap = {
     rj_warp_gate_title: {
         zh_CN: "RJ号折跃门",
         zh_TW: "RJ號折躍門",
@@ -46,10 +47,27 @@ export const localizationMap = {
         zh_TW: "檢索失敗",
         en_US: "Search failed"
     },
+    search_queue_timeout: {
+        zh_CN: "南+ 搜索队列繁忙，请稍后手动重试",
+        zh_TW: "南+ 搜尋佇列繁忙，請稍後手動重試",
+        en_US: "The South+ search queue is busy. Please retry manually in a moment."
+    },
     click_to_retry: {
         zh_CN: "点击重试",
         zh_TW: "點擊重試",
         en_US: "click to retry"
+    },
+
+    copy_diagnostics: {
+        zh_CN: "复制诊断信息",
+        zh_TW: "複製診斷資訊",
+        en_US: "Copy diagnostics"
+    },
+
+    diagnostics_copied: {
+        zh_CN: "诊断信息已复制",
+        zh_TW: "診斷資訊已複製",
+        en_US: "Diagnostics copied"
     },
 
 
@@ -412,26 +430,17 @@ export const localizationMap = {
         zh_CN: "🌙 切换至夜间模式",
         zh_TW: "🌙 切換至夜間模式",
         en_US: "🌙 Switch to Dark Mode"
-    },
-
-    get: function (key: any) {
-        let lang = navigator.language.toLowerCase();
-        let langKey = "en_US";
-        if (lang.includes("zh")) {
-            if (lang.includes("cn") || lang.includes("sg") || lang === "zh") {
-                langKey = "zh_CN";
-            } else {
-                langKey = "zh_TW";
-            }
-        }
-        return typeof key === "string" ? (localizationMap as any)[key]?.[langKey] : key[langKey];
     }
-};
+} satisfies Record<string, LocalizedText>;
 
-export function localize(key: any) {
-    return localizationMap.get(key);
+type LocalizationKey = keyof typeof localizationMap;
+
+function getLocale(): Locale {
+    const lang = navigator.language.toLowerCase();
+    if (!lang.includes('zh')) return 'en_US';
+    return lang.includes('cn') || lang.includes('sg') || lang === 'zh' ? 'zh_CN' : 'zh_TW';
 }
 
-export function localizePopup(key: any) {
-    return localizationMap.get(key);
+export function localize(key: LocalizationKey): string {
+    return localizationMap[key][getLocale()];
 }
