@@ -91,6 +91,8 @@ npm run build
 - 每个页面的 Preact Root 数量保持固定，不随 RJ 数量增长。
 - 读取布局和写入样式分阶段执行，避免循环中交替调用 `getBoundingClientRect()` 和样式写入。
 - 移动弹窗不能只依据 layout viewport 宽度判断；南+等无 viewport 声明的旧页面必须结合 `visualViewport`、紧凑横屏和粗指针设备识别。弹窗应限制在实际可视区域内，底部偏移须使用 `position: fixed` 的实际包含块高度：标准模式取排除滚动条槽的 `documentElement.clientHeight`；`document.scrollingElement === document.body` 的 BackCompat/无 doctype 页面若布局宽度相对 visual viewport 明显放大（当前阈值 1.25）则取 `window.innerHeight`，接近 1:1 时取排除横向滚动条槽的 `body.clientHeight`，再结合 `visualViewport.offsetTop` 与 `visualViewport.height` 计算。不能通过新增或改写宿主页面的 viewport meta 解决，也不得在打开时扩大 `documentElement.scrollWidth` 或改变页面缩放。
+- South Plus 移动弹窗在页面或 visual viewport 开始滚动时必须关闭，避免 BackCompat 页滚动期间反复修正 fixed 偏移而产生追随运动；桌面锚定弹窗不受该规则影响，弹窗外点击仍应关闭。弹窗收回使用浏览器原生 CSS animation 与 `animationend` 后卸载，保留短超时兜底；`prefers-reduced-motion` 下立即卸载，不引入独立动画组件库。
+- South Plus 简版列表的连续 RJ 编号等不可断行标题必须在脚本判定的移动布局类内使用 `overflow-wrap:anywhere` 作为兜底，并限制卡片、正文和标题容器宽度。标题沿用论坛原有约四行高度，通过原生多行截断隐藏额外内容，避免换行文本覆盖作者/回复区域。不得通过给整个页面设置 `overflow-x:hidden` 隐藏问题；目标是让宿主标题本身不再扩大 `scrollWidth`，桌面布局保持原站行为。
 - 无 viewport 的手持设备必须直接进入移动底部弹窗；粗指针只以主指针的 `matchMedia('(pointer: coarse)')` 为准，并以浏览器明确的 mobile UA 信号兜底。`navigator.maxTouchPoints` 只能表示设备支持触控，不能单独用来判定手机，否则会把带触摸屏、主指针仍为 fine 且支持 hover 的桌面设备误判为移动端。
 - 桌面弹窗在点击点附近翻转时不得用固定预估高度反推 `top`。点击点下方空间不足时应以 `bottom` 锚定并向上自然展开，同时按该侧实际可用空间设置 `max-height`，以兼容系统 DPI 缩放、内容高度变化和长列表滚动位置。
 - 动画应支持 `prefers-reduced-motion`。

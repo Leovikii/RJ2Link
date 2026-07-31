@@ -1,9 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { enhanceSouthPlusNode } from '../../src/sites/southplus/adapter';
+import { enhanceSouthPlusNode, setSouthPlusMobileLayoutClass } from '../../src/sites/southplus/adapter';
 
 describe('South Plus DOM enhancer', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    setSouthPlusMobileLayoutClass(false);
+  });
+
+  it('scopes the forum overflow repair to the mobile layout class', () => {
+    setSouthPlusMobileLayoutClass(true);
+    expect(document.documentElement.classList.contains('rwg-southplus-mobile-layout')).toBe(true);
+    setSouthPlusMobileLayoutClass(false);
+    expect(document.documentElement.classList.contains('rwg-southplus-mobile-layout')).toBe(false);
   });
 
   it('linkifies plain text without touching editable fields', () => {
@@ -32,4 +40,3 @@ describe('South Plus DOM enhancer', () => {
     expect(document.body.textContent).toBe('RJ123456');
   });
 });
-

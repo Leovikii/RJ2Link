@@ -26,6 +26,42 @@ describe('Preact shared components', () => {
     expect(close).toHaveBeenCalledOnce();
   });
 
+  it('keeps a closing popup mounted until its native exit animation finishes', () => {
+    const close = vi.fn();
+    const { rerender } = render(
+      <PopupPanel display title="Animated" onClose={close}>Body</PopupPanel>,
+    );
+    rerender(<PopupPanel display={false} title="Animated" onClose={close}>Body</PopupPanel>);
+    const dialog = screen.getByRole('dialog', { hidden: true });
+    expect(dialog.classList.contains('rwg-popup--closing')).toBe(true);
+    fireEvent.animationEnd(dialog);
+    expect(screen.queryByRole('dialog', { hidden: true })).toBeNull();
+  });
+
+  it('dismisses a mobile popup when the page starts scrolling', () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    const close = vi.fn();
+    render(
+      <PopupPanel display title="Mobile" onClose={close} dismissOnViewportScroll>Body</PopupPanel>,
+    );
+    fireEvent.scroll(window);
+    expect(close).toHaveBeenCalledOnce();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+  });
+
+  it('keeps a desktop popup open while the page scrolls', () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    const close = vi.fn();
+    render(
+      <PopupPanel display title="Desktop" onClose={close} dismissOnViewportScroll>Body</PopupPanel>,
+    );
+    fireEvent.scroll(window);
+    expect(close).not.toHaveBeenCalled();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+  });
+
   it('prevents navigation for a disabled action', () => {
     render(<ActionButton theme="asmrone" href={null} />);
     const brand = screen.getByText('ASMR.one');

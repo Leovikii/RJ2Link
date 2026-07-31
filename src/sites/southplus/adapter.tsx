@@ -4,12 +4,18 @@ import { PrefetchController, schedulePrefetch, selectPrefetchCandidates, type Pr
 import { ResourceController } from '../../application/resource-controller';
 import { clipboard, dlsiteProvider, providerRegistry, storage } from '../../application/runtime';
 import { findRjCodes, parseRjCode, RJ_CODE_SEARCH_PATTERN, type RjCode } from '../../domain/rj-code';
+import { readPopupViewportState } from '../../ui/hooks/use-popup-position';
 import { SouthPlusApp } from '../../ui/southplus/app';
 
 const LINK_CLASS = 'rwg-rj-link';
 const CODE_ATTR = 'data-rwg-code';
 const DL_SITE_URL = /dlsite\.com\/.*\/product_id\/(?:R[JE]|[VB]J)\d{6}(?:\d{2})?/i;
 const PREFETCH_CACHE_PROBE_LIMIT = 6;
+const MOBILE_LAYOUT_CLASS = 'rwg-southplus-mobile-layout';
+
+export function setSouthPlusMobileLayoutClass(mobile: boolean): void {
+  document.documentElement.classList.toggle(MOBILE_LAYOUT_CLASS, mobile);
+}
 
 export function initSouthPlus(): () => void {
   void storage.set('last_forum_domain', location.hostname);
@@ -17,6 +23,14 @@ export function initSouthPlus(): () => void {
   mount.id = 'rwg-southplus-root';
   mount.className = 'rwg-root';
   document.body.appendChild(mount);
+
+  const updateMobileLayoutClass = () => {
+    setSouthPlusMobileLayoutClass(readPopupViewportState().mobile);
+  };
+  updateMobileLayoutClass();
+  window.addEventListener('resize', updateMobileLayoutClass, { passive: true });
+  window.addEventListener('orientationchange', updateMobileLayoutClass, { passive: true });
+  window.visualViewport?.addEventListener('resize', updateMobileLayoutClass, { passive: true });
 
   const popup = new PopupController();
   const resources = new ResourceController(providerRegistry);
@@ -118,6 +132,10 @@ export function initSouthPlus(): () => void {
     document.removeEventListener('mouseout', onMouseOut);
     document.removeEventListener('keydown', onKeyDown);
     document.removeEventListener('visibilitychange', cancelPrefetchWhenHidden);
+    window.removeEventListener('resize', updateMobileLayoutClass);
+    window.removeEventListener('orientationchange', updateMobileLayoutClass);
+    window.visualViewport?.removeEventListener('resize', updateMobileLayoutClass);
+    setSouthPlusMobileLayoutClass(false);
     resources.dispose();
     render(null, mount);
     mount.remove();

@@ -91,7 +91,7 @@ export function calculatePopupViewportState(metrics: PopupViewportMetrics): Popu
   };
 }
 
-function readPopupViewportState(): PopupViewportState {
+export function readPopupViewportState(): PopupViewportState {
   const visualViewport = window.visualViewport;
   const layoutHeight = resolveLayoutViewportHeight(
     document.documentElement.clientHeight,

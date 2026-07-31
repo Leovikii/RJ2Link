@@ -63,6 +63,7 @@ export function SouthPlusApp({ popup, resources, clipboard, cancelHide, startHid
       className="rwg-popup--work"
       position={position}
       onClose={() => popup.unpinAndClose()}
+      dismissOnViewportScroll
       onMouseEnter={cancelHide}
       onMouseLeave={startHide}
     >
