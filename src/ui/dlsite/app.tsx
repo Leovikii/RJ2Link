@@ -3,7 +3,7 @@ import type { RjCode } from '../../domain/rj-code';
 import type { ResourceController } from '../../application/resource-controller';
 import { useExternalStore } from '../hooks/use-external-store';
 import { PopupPanel } from '../components/popup-panel';
-import { ActionButton } from '../components/action-button';
+import { ExternalLinkIcon } from '../components/action-button';
 import { localize } from '../../config/localization';
 import type { KeyValueStorage } from '../../infrastructure/storage/key-value-storage';
 import { useMobileFabPosition } from '../hooks/use-mobile-fab-position';
@@ -140,12 +140,22 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
       >
         <div class="rwg-resource-panel">
           {asmr?.status === 'loading' && <span class="rwg-skeleton" />}
-          <div class="rwg-provider-row">
-            <ActionButton theme="asmrone" href={asmrUrl} />
-            {asmrRetryable && <ProviderRetryButton
-              providerName="ASMR ONE"
-              onClick={() => retry('asmr-one')}
-            />}
+          <div class="rwg-provider-heading rwg-provider-heading--asmrone">
+            <h3>ASMR.one</h3>
+            <div class="rwg-provider-controls">
+              {asmrUrl && <a
+                class="rwg-provider-control rwg-provider-link"
+                href={asmrUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={localize('go_to_asmrone')}
+                title={localize('go_to_asmrone')}
+              ><ExternalLinkIcon /></a>}
+              {asmrRetryable && <ProviderRetryButton
+                providerName="ASMR ONE"
+                onClick={() => retry('asmr-one')}
+              />}
+            </div>
           </div>
           {asmr?.status === 'error' && <div class="rwg-status"><strong>ASMR ONE · {localize('search_failed')}</strong><small>{asmr.error.message}</small></div>}
           {resourceGroups.map((group) => <section key={group.providerId}>
@@ -160,7 +170,7 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
             {group.state.status === 'error' && <div class="rwg-status"><strong>{localize('search_failed')}</strong><small>{group.state.error.kind === 'rate-limited' ? localize('search_queue_timeout') : group.state.error.message}</small></div>}
             {group.state.status === 'empty' && <div class="rwg-status">{localize('no_resources')}</div>}
             {group.state.status === 'success' && <ul class="rwg-results">{group.results.map((result) => (
-              <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{[result.author, normalizeDateOnly(result.date)].filter(Boolean).join(' ')}</small></a></li>
+              <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{[result.author, normalizeDateOnly(result.date)].filter(Boolean).join(' ')}</small><ExternalLinkIcon /></a></li>
             ))}</ul>}
           </section>)}
           {hasDiagnosticError && diagnostics.hasEntries() && <button class="rwg-retry" type="button" onClick={() => { void copyDiagnostics(); }}>
@@ -175,7 +185,7 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
 function ProviderRetryButton({ providerName, onClick }: { providerName: string; onClick(): void }) {
   const label = `${providerName} · ${localize('click_to_retry')}`;
   return (
-    <button class="rwg-provider-retry" type="button" onClick={onClick} aria-label={label} title={label}>
+    <button class="rwg-provider-control rwg-provider-retry" type="button" onClick={onClick} aria-label={label} title={label}>
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M19 8a7 7 0 1 0 1 6M19 4v4h-4" />
       </svg>

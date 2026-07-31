@@ -94,6 +94,8 @@ describe('South Plus metadata popup', () => {
     expect(screen.getByRole('dialog').classList.contains('rwg-popup--work')).toBe(true);
     const coverColumn = container.querySelector('.rwg-work__cover-column')!;
     expect(coverColumn.querySelectorAll('.rwg-action')).toHaveLength(2);
+    expect(coverColumn.querySelector('.rwg-external-icon')).toBeTruthy();
+    expect(coverColumn.querySelector('.rwg-unavailable-icon')).toBeTruthy();
     expect(screen.getByText('2026-07-25')).toBeTruthy();
     expect(screen.queryByText(/00:00:00/)).toBeNull();
     const voiceGroup = container.querySelector('.rwg-badge--voice')?.closest('.rwg-info');

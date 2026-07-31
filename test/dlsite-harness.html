@@ -27,7 +27,8 @@
           let status = 200;
           let payload = '{}';
           if (options.url.includes('search.php') && options.method === 'POST') {
-            payload = '<table><tr><td><a href="read.php?tid-123.html">Harness Resource</a></td><td></td><td></td><td><a href="u.php?uid=4">Author</a> 2026-07-30</td></tr></table>';
+            const rows = Array.from({ length: 12 }, (_, index) => `<tr><td><a href="read.php?tid-${123 + index}.html">Harness Resource ${index + 1}</a></td><td></td><td></td><td><a href="u.php?uid=4">Author</a> 2026-07-30</td></tr>`).join('');
+            payload = `<table>${rows}</table>`;
           } else if (options.url.includes('search.php')) {
             payload = '<form action="search.php"><input name="keyword"><input name="token" value="csrf"><select name="sch_time"><option value="30" selected>30</option></select></form>';
           } else if (options.url.includes('asmr-200.com')) {

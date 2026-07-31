@@ -30,6 +30,8 @@ describe('Preact shared components', () => {
     expect(brand.classList.contains('rwg-action__brand')).toBe(true);
     expect(link.getAttribute('href')).toBeNull();
     expect(link.getAttribute('aria-disabled')).toBe('true');
+    expect(link.querySelector('.rwg-unavailable-icon')).toBeTruthy();
+    expect(link.textContent).not.toContain('⊘');
   });
 
   it('renders an enabled action as an external navigation link', () => {
@@ -41,6 +43,8 @@ describe('Preact shared components', () => {
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('aria-disabled')).toBe('false');
     expect(link.classList.contains('is-disabled')).toBe(false);
+    expect(link.querySelector('.rwg-external-icon')).toBeTruthy();
+    expect(link.textContent).not.toContain('↗');
   });
 
   it('clamps a large popup inside the viewport when neither side fully fits', () => {

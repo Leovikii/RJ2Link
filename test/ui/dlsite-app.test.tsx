@@ -104,6 +104,10 @@ describe('DLsite app interactions', () => {
     expect(trigger.querySelector('.rwg-fab__source--southplus')?.textContent).toBe('SP0');
     fireEvent.mouseEnter(trigger);
     expect(screen.getByText(localize('search_queue_timeout'))).toBeTruthy();
+    const asmrLink = screen.getByRole('link', { name: localize('go_to_asmrone') });
+    expect(asmrLink.closest('.rwg-provider-heading--asmrone')).toBeTruthy();
+    expect(asmrLink.querySelector('.rwg-external-icon')).toBeTruthy();
+    expect(screen.queryByText('↗')).toBeNull();
     expect(screen.queryByRole('button', { name: localize('copy_diagnostics') })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: `South Plus · ${localize('click_to_retry')}` }));
     await waitFor(() => expect(southPlus).toHaveBeenCalledTimes(2));
@@ -134,7 +138,7 @@ describe('DLsite app interactions', () => {
     const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 1' });
     fireEvent.click(trigger);
     const retry = screen.getByRole('button', { name: `ASMR ONE · ${localize('click_to_retry')}` });
-    expect(retry.closest('.rwg-provider-row')).toBeTruthy();
+    expect(retry.closest('.rwg-provider-heading--asmrone')).toBeTruthy();
     expect(screen.queryByRole('button', { name: `South Plus · ${localize('click_to_retry')}` })).toBeNull();
     fireEvent.click(retry);
     await waitFor(() => expect(asmrOne).toHaveBeenCalledTimes(2));
@@ -158,6 +162,25 @@ describe('DLsite app interactions', () => {
 
     expect(screen.getByText('Author 2026-07-30')).toBeTruthy();
     expect(screen.queryByText(/15:50/u)).toBeNull();
+    controller.dispose();
+  });
+
+  it('keeps multiple forum results inside the dedicated scrollable list', async () => {
+    const results = Array.from({ length: 12 }, (_, index): ResourceResult => ({
+      id: String(index + 1),
+      providerId: 'southplus',
+      title: `Forum result ${index + 1}`,
+      url: `https://example.test/result/${index + 1}`,
+    }));
+    const { controller } = renderApp(async () => results);
+    const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 12' });
+
+    fireEvent.click(trigger);
+
+    const list = screen.getByRole('list');
+    expect(list.classList.contains('rwg-results')).toBe(true);
+    expect(list.querySelectorAll('li')).toHaveLength(12);
+    expect(list.querySelectorAll('.rwg-external-icon')).toHaveLength(12);
     controller.dispose();
   });
 
