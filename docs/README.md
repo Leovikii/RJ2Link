@@ -9,7 +9,7 @@
 - [AI agents 指南](agents.md)：AI 修改仓库前必须遵循的入口、工作流程和验证要求。
 - [South Plus RJ 元数据预取](features/southplus-rj-prefetch.md)：预加载功能的网络预算、调度算法和验收标准。
 - [South Plus 搜索协调](features/southplus-search-coordination.md)：跨标签页冷却队列、等待预算、手动重试和精简诊断策略。
-- [v1.3.1 修复计划](plans/v1.3.1.md)：当前版本范围、DLsite 长标题溢出修复方案和验收标准。
+- [v1.3.1 修复与发布记录](plans/v1.3.1.md)：已发布补丁的范围、DLsite 长标题溢出修复方案和最终验收记录。
 - [v1.3.0 重构计划](plans/v1.3.0.md)：已完成架构版本的范围、里程碑和验证记录。
 
 ## 文档职责
