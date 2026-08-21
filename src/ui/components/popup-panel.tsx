@@ -7,6 +7,9 @@ const POPUP_EXIT_FALLBACK_MS = 220;
 interface PopupPanelProps {
   display: boolean;
   title?: string;
+  ariaLabel?: string;
+  headerIcon?: ComponentChildren;
+  headerMeta?: ComponentChildren;
   theme?: 'maniax' | 'girls' | 'default';
   className?: string;
   position?: JSX.CSSProperties;
@@ -20,6 +23,9 @@ interface PopupPanelProps {
 export function PopupPanel({
   display,
   title,
+  ariaLabel,
+  headerIcon,
+  headerMeta,
   theme = 'default',
   className,
   position,
@@ -71,7 +77,7 @@ export function PopupPanel({
       style={viewport.mobile ? { ...position, ...viewport.style } : position}
       role="dialog"
       aria-modal="false"
-      aria-label={title || 'RJ Warp Gate'}
+      aria-label={ariaLabel || title || 'RJ Warp Gate'}
       aria-hidden={closing}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -82,7 +88,11 @@ export function PopupPanel({
       }}
     >
       <header class="rwg-popup__header">
-        <strong>{title}</strong>
+        <div class="rwg-popup__heading">
+          {headerIcon}
+          <strong>{title}</strong>
+          {headerMeta}
+        </div>
         <button class="rwg-popup__close" type="button" onClick={onClose} aria-label="Close">×</button>
       </header>
       <div class="rwg-popup__body">{children}</div>

@@ -14,7 +14,7 @@ Project homepage: [GitHub](https://github.com/Leovikii/RJ-Warp-Gate). The usersc
 
 - **Forum previews**: Click an RJ code on South Plus to view its cover, title, cast, tags, release date, sales, and quick links.
 - **Cross-site search**: Open the floating control on DLsite to find matching South Plus posts and ASMR ONE listening pages.
-- **Mobile-friendly UI**: Popups stay inside the visible screen, and long forum titles no longer stretch the page horizontally.
+- **Mobile-friendly UI**: Popups stay inside the visible screen, while long forum and DLsite search-result titles no longer create horizontal page or list scrolling.
 - **Faster first preview**: Nearby metadata can load quietly in advance when the browser and network are idle.
 - **Dark mode and languages**: Includes a South Plus dark theme and automatically supports English, Simplified Chinese, and Traditional Chinese.
 

@@ -12,6 +12,7 @@ import type { TextClipboard } from '../../infrastructure/gm/clipboard';
 import { useAttachedPopupPosition } from '../hooks/use-popup-position';
 import { normalizeDateOnly } from '../../domain/date';
 import rjWarpGateIcon from '../../../assets/icon.svg';
+import { OverlayScrollArea } from '../components/overlay-scroll-area';
 
 interface DlsiteAppProps {
   code: RjCode;
@@ -132,35 +133,48 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
       </button>
       <PopupPanel
         display={open}
-        title="Search Result"
+        title="RJ Warp Gate"
+        ariaLabel={`RJ Warp Gate · Search Results · ${code}`}
+        headerIcon={<img class="rwg-popup__brand" src={rjWarpGateIcon} alt="" aria-hidden="true" />}
+        headerMeta={<span class="rwg-popup__code">{code}</span>}
+        className="rwg-popup--resources"
         position={popupPosition}
         onClose={() => setOpen(false)}
         onMouseEnter={cancelHide}
         onMouseLeave={startHide}
       >
         <div class="rwg-resource-panel">
-          {asmr?.status === 'loading' && <span class="rwg-skeleton" />}
-          <div class="rwg-provider-heading rwg-provider-heading--asmrone">
-            <h3>ASMR.one</h3>
-            <div class="rwg-provider-controls">
-              {asmrUrl && <a
-                class="rwg-provider-control rwg-provider-link"
-                href={asmrUrl}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={localize('go_to_asmrone')}
-                title={localize('go_to_asmrone')}
-              ><ExternalLinkIcon /></a>}
-              {asmrRetryable && <ProviderRetryButton
-                providerName="ASMR ONE"
-                onClick={() => retry('asmr-one')}
-              />}
-            </div>
-          </div>
-          {asmr?.status === 'error' && <div class="rwg-status"><strong>ASMR ONE · {localize('search_failed')}</strong><small>{asmr.error.message}</small></div>}
-          {resourceGroups.map((group) => <section key={group.providerId}>
+          <section class="rwg-provider-section rwg-provider-section--asmrone">
             <div class="rwg-provider-heading">
-              <h3>{group.providerId === 'southplus' ? localize('southplus_resources') : group.displayName} {group.results.length > 0 && `(${group.results.length})`}</h3>
+              <div class="rwg-provider-identity">
+                <i class="rwg-provider-dot" aria-hidden="true" />
+                <h3>ASMR.one</h3>
+              </div>
+              <div class="rwg-provider-controls">
+                {asmrUrl && <a
+                  class="rwg-provider-control rwg-provider-link"
+                  href={asmrUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={localize('go_to_asmrone')}
+                  title={localize('go_to_asmrone')}
+                ><ExternalLinkIcon /></a>}
+                {asmrRetryable && <ProviderRetryButton
+                  providerName="ASMR ONE"
+                  onClick={() => retry('asmr-one')}
+                />}
+              </div>
+            </div>
+            {asmr?.status === 'loading' && <div class="rwg-provider-content"><span class="rwg-skeleton" /></div>}
+            {asmr?.status === 'error' && <div class="rwg-status"><strong>ASMR ONE · {localize('search_failed')}</strong><small>{asmr.error.message}</small></div>}
+          </section>
+          {resourceGroups.map((group) => <section class={`rwg-provider-section rwg-provider-section--${group.providerId}`} key={group.providerId}>
+            <div class="rwg-provider-heading">
+              <div class="rwg-provider-identity">
+                <i class="rwg-provider-dot" aria-hidden="true" />
+                <h3>{group.providerId === 'southplus' ? 'South Plus' : group.displayName}</h3>
+                {group.results.length > 0 && <span class="rwg-provider-count">{group.results.length}</span>}
+              </div>
               {allDone && (group.state.status === 'error' || group.state.status === 'empty') && <ProviderRetryButton
                 providerName={group.displayName}
                 onClick={() => retry(group.providerId)}
@@ -169,9 +183,9 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
             {group.state.status === 'loading' && <div class="rwg-loading"><span class="rwg-skeleton" /><span class="rwg-skeleton" /></div>}
             {group.state.status === 'error' && <div class="rwg-status"><strong>{localize('search_failed')}</strong><small>{group.state.error.kind === 'rate-limited' ? localize('search_queue_timeout') : group.state.error.message}</small></div>}
             {group.state.status === 'empty' && <div class="rwg-status">{localize('no_resources')}</div>}
-            {group.state.status === 'success' && <ul class="rwg-results">{group.results.map((result) => (
-              <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{[result.author, normalizeDateOnly(result.date)].filter(Boolean).join(' ')}</small><ExternalLinkIcon /></a></li>
-            ))}</ul>}
+            {group.state.status === 'success' && <OverlayScrollArea>{group.results.map((result) => (
+              <li key={`${result.providerId}:${result.id}`}><a href={result.url} target="_blank" rel="noreferrer"><strong>{result.title}</strong><small>{[result.author, normalizeDateOnly(result.date)].filter(Boolean).join(' ')}</small></a></li>
+            ))}</OverlayScrollArea>}
           </section>)}
           {hasDiagnosticError && diagnostics.hasEntries() && <button class="rwg-retry" type="button" onClick={() => { void copyDiagnostics(); }}>
             {diagnosticsCopied ? localize('diagnostics_copied') : localize('copy_diagnostics')}

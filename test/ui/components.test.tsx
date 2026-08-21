@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ActionButton } from '../../src/ui/components/action-button';
+import { OverlayScrollArea } from '../../src/ui/components/overlay-scroll-area';
 import { PopupPanel } from '../../src/ui/components/popup-panel';
 import {
   calculateAttachedPopupPosition,
@@ -82,8 +83,38 @@ describe('Preact shared components', () => {
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('aria-disabled')).toBe('false');
     expect(link.classList.contains('is-disabled')).toBe(false);
-    expect(link.querySelector('.rwg-external-icon')).toBeTruthy();
+    const externalIcon = link.querySelector('.rwg-external-icon');
+    expect(externalIcon).toBeTruthy();
+    expect(externalIcon?.querySelectorAll('path')).toHaveLength(3);
     expect(link.textContent).not.toContain('↗');
+  });
+
+  it('shows the overlay scrollbar while scrolling and fades it after idle', () => {
+    vi.useFakeTimers();
+    try {
+      render(<OverlayScrollArea><li><a href="https://example.test">Result</a></li></OverlayScrollArea>);
+      const list = screen.getByRole('list');
+      const shell = list.closest('.rwg-results-scroll')!;
+      const track = shell.querySelector('.rwg-results-scrollbar')!;
+      const thumb = shell.querySelector<HTMLElement>('.rwg-results-scrollbar__thumb')!;
+      Object.defineProperties(list, {
+        clientHeight: { configurable: true, value: 100 },
+        scrollHeight: { configurable: true, value: 400 },
+        scrollTop: { configurable: true, writable: true, value: 50 },
+      });
+      Object.defineProperty(track, 'clientHeight', { configurable: true, value: 100 });
+
+      fireEvent.scroll(list);
+
+      expect(shell.classList.contains('is-scrollable')).toBe(true);
+      expect(shell.classList.contains('is-scrolling')).toBe(true);
+      expect(thumb.style.height).toBe('32px');
+      expect(thumb.style.transform).toBe('translateY(11px)');
+      vi.advanceTimersByTime(850);
+      expect(shell.classList.contains('is-scrolling')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('clamps a large popup inside the viewport when neither side fully fits', () => {

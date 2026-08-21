@@ -24,12 +24,12 @@ npm run build
 - `npm run dev` 启动 Vite 开发构建。
 - `npm run build` 生成 `dist/rj-warp-gate.user.js`。
 - 使用 `npm ci` 验证锁文件，只有明确更新依赖时才运行会修改锁文件的安装命令。
-- v1.3.0 已提供稳定的 typecheck/test/lint/build 命令；交付记录必须写明实际执行结果，不能用 Vite 构建代替类型检查或测试。
+- v1.3.x 已提供稳定的 typecheck/test/lint/build 命令；交付记录必须写明实际执行结果，不能用 Vite 构建代替类型检查或测试。
 - `test/harness.html` 与 `test/dlsite-harness.html` 是保留的本地浏览器冒烟夹具：运行 `npm run dev` 后分别模拟论坛页和 DLsite 页。论坛夹具的 `?legacy-mobile=1` 模式用于复现南+缺少 viewport 声明、移动设备仍保留桌面布局视口的场景，`?bottom-anchor=1` 模式用于复现长列表底部点击和桌面弹窗向上展开。它们不属于 Vitest fixture，也不得当作无引用文件删除。
 
 ## 2. TypeScript
 
-- v1.3.0 目标是开启 `strict: true`。
+- v1.3.x 保持 `strict: true`。
 - 禁止新增隐式 `any`；外部数据先作为 `unknown` 验证。
 - 公共函数参数和返回值必须显式标注。
 - 优先使用可判别联合表达状态和错误。
@@ -95,6 +95,7 @@ npm run build
 - South Plus 简版列表的连续 RJ 编号等不可断行标题必须在脚本判定的移动布局类内使用 `overflow-wrap:anywhere` 作为兜底，并限制卡片、正文和标题容器宽度。标题沿用论坛原有约四行高度，通过原生多行截断隐藏额外内容，避免换行文本覆盖作者/回复区域。不得通过给整个页面设置 `overflow-x:hidden` 隐藏问题；目标是让宿主标题本身不再扩大 `scrollWidth`，桌面布局保持原站行为。
 - 无 viewport 的手持设备必须直接进入移动底部弹窗；粗指针只以主指针的 `matchMedia('(pointer: coarse)')` 为准，并以浏览器明确的 mobile UA 信号兜底。`navigator.maxTouchPoints` 只能表示设备支持触控，不能单独用来判定手机，否则会把带触摸屏、主指针仍为 fine 且支持 hover 的桌面设备误判为移动端。
 - 桌面弹窗在点击点附近翻转时不得用固定预估高度反推 `top`。点击点下方空间不足时应以 `bottom` 锚定并向上自然展开，同时按该侧实际可用空间设置 `max-height`，以兼容系统 DPI 缩放、内容高度变化和长列表滚动位置。
+- 脚本注入的结果列表必须在自身组件边界内约束宽度：Grid/Flex 子项使用 `min-width: 0`，文本恢复正常换行，并用 `overflow-wrap: anywhere` 兜底连续英文、URL 或 RJ 编号。长列表只开放纵向滚动，横向溢出由容器安全裁切；不得只靠缩小字号，也不得给宿主页面的 `html` 或 `body` 设置全局 `overflow-x`。
 - 动画应支持 `prefers-reduced-motion`。
 - 图片默认懒加载；后台 RJ 预取不预取封面图片。
 
@@ -110,7 +111,7 @@ npm run build
 
 ## 9. 测试
 
-v1.3.0 最低测试层级：
+v1.3.x 最低测试层级：
 
 ### 单元测试
 
@@ -126,6 +127,7 @@ v1.3.0 最低测试层级：
 
 - loading、empty、error、success 状态。
 - 弹窗打开、固定、关闭和移动端行为。
+- 长标题在桌面和移动端均不产生弹窗或结果列表横向滚动，长列表仍可纵向滚动。
 - 预取结果被用户打开时正确复用。
 
 ### 集成检查
@@ -139,7 +141,7 @@ v1.3.0 最低测试层级：
 
 ## 10. 建议命令
 
-v1.3.0 应在 `package.json` 建立以下稳定命令：
+v1.3.x 在 `package.json` 保持以下稳定命令：
 
 ```bash
 npm run typecheck

@@ -37,7 +37,7 @@ export default defineConfig({
           '*://*.dlsite.com.tw/*',
         ],
         icon: iconDataUrl,
-        version: '1.3.0',
+        version: '1.3.1',
         connect: [
           'www.dlsite.com',
           'api.asmr-200.com',
