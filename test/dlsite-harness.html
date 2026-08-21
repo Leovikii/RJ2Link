@@ -4,10 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>RJ Warp Gate DLsite harness</title>
-    <style>body { min-height: 120vh; margin: 0; background: #eee; font: 16px system-ui; } main { padding: 32px; } button { font-family: serif; }</style>
+    <style>body { min-height: 120vh; margin: 0; background: #eee; font: 16px system-ui; } main { padding: 32px; } button { font-family: serif; } strong, small { white-space: nowrap; } #layout-metrics { max-width: 720px; padding: 12px; overflow-wrap: anywhere; white-space: pre-wrap; background: #fff; }</style>
   </head>
   <body>
-    <main><h1>DLsite 本地宿主页</h1><output id="request-count">0</output></main>
+    <main>
+      <h1>DLsite 本地宿主页</h1>
+      <p>请求数：<output id="request-count">0</output></p>
+      <pre id="layout-metrics">打开 Search Result 后自动显示布局测量。</pre>
+    </main>
     <script>
       const values = new Map();
       globalThis.__rwgHarness = { requests: [] };
@@ -27,7 +31,13 @@
           let status = 200;
           let payload = '{}';
           if (options.url.includes('search.php') && options.method === 'POST') {
-            const rows = Array.from({ length: 12 }, (_, index) => `<tr><td><a href="read.php?tid-${123 + index}.html">Harness Resource ${index + 1}</a></td><td></td><td></td><td><a href="u.php?uid=4">Author</a> 2026-07-30</td></tr>`).join('');
+            const longTitles = [
+              '这是一个用于验证多行排版的超长中文标题，应该完整换行并始终保持在搜索结果卡片范围以内',
+              'RJ01234567RJ07654321RJ01111111RJ02222222RJ03333333RJ04444444RJ05555555RJ06666666',
+              'https://example.test/resources/really-long-unbroken-path-without-any-natural-wrapping-opportunity',
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.repeat(3),
+            ];
+            const rows = Array.from({ length: 12 }, (_, index) => `<tr><td><a href="read.php?tid-${123 + index}.html">${longTitles[index] || `Harness Resource ${index + 1}`}</a></td><td></td><td></td><td><a href="u.php?uid=4">VeryLongAuthorNameWithoutNaturalWrappingOpportunity${index}</a> 2026-07-30</td></tr>`).join('');
             payload = `<table>${rows}</table>`;
           } else if (options.url.includes('search.php')) {
             payload = '<form action="search.php"><input name="keyword"><input name="token" value="csrf"><select name="sch_time"><option value="30" selected>30</option></select></form>';
@@ -44,7 +54,50 @@
     <script type="module">
       import '/src/ui/styles.css';
       import { initDlsite } from '/src/sites/dlsite/adapter.tsx';
+      if (!/(?:R[JE]|[VB]J)\d{6}(?:\d{2})?/i.test(location.href)) {
+        history.replaceState(null, '', `${location.pathname}?RJ123456`);
+      }
       initDlsite();
+
+      const measureLayout = () => {
+        const dialog = document.querySelector('.rwg-popup--resources');
+        const list = dialog?.querySelector('.rwg-results');
+        const overlayScrollbar = dialog?.querySelector('.rwg-results-scrollbar');
+        if (!(dialog instanceof HTMLElement) || !(list instanceof HTMLElement)) return;
+        const listRect = list.getBoundingClientRect();
+        const cards = [...list.querySelectorAll('a')];
+        const metrics = {
+          viewport: `${window.innerWidth}x${window.innerHeight}`,
+          document: { clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth },
+          dialog: { clientWidth: dialog.clientWidth, scrollWidth: dialog.scrollWidth, overflowX: getComputedStyle(dialog).overflowX },
+          list: {
+            clientWidth: list.clientWidth,
+            scrollWidth: list.scrollWidth,
+            clientHeight: list.clientHeight,
+            scrollHeight: list.scrollHeight,
+            scrollLeft: list.scrollLeft,
+            overflowX: getComputedStyle(list).overflowX,
+            overflowY: getComputedStyle(list).overflowY,
+            nativeScrollbarWidth: list.offsetWidth - list.clientWidth,
+            scrollbarWidth: getComputedStyle(list).scrollbarWidth,
+          },
+          overlayScrollbar: overlayScrollbar instanceof HTMLElement ? {
+            width: overlayScrollbar.getBoundingClientRect().width,
+            opacity: getComputedStyle(overlayScrollbar).opacity,
+          } : null,
+          cardOverflow: {
+            left: Math.max(0, ...cards.map((card) => listRect.left - card.getBoundingClientRect().left)),
+            right: Math.max(0, ...cards.map((card) => card.getBoundingClientRect().right - listRect.right)),
+          },
+        };
+        globalThis.__rwgHarness.layout = metrics;
+        const serialized = JSON.stringify(metrics, null, 2);
+        const output = document.querySelector('#layout-metrics');
+        if (output.textContent !== serialized) output.textContent = serialized;
+      };
+      const observer = new MutationObserver(() => requestAnimationFrame(measureLayout));
+      observer.observe(document.body, { childList: true, subtree: true });
+      window.addEventListener('resize', () => requestAnimationFrame(measureLayout), { passive: true });
     </script>
   </body>
 </html>

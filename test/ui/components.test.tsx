@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ActionButton } from '../../src/ui/components/action-button';
+import { OverlayScrollArea } from '../../src/ui/components/overlay-scroll-area';
 import { PopupPanel } from '../../src/ui/components/popup-panel';
 import {
   calculateAttachedPopupPosition,
@@ -22,7 +23,10 @@ describe('Preact shared components', () => {
     const close = vi.fn();
     render(<PopupPanel display title="Result" onClose={close}>Body</PopupPanel>);
     expect(screen.getByRole('dialog').textContent).toContain('Body');
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const closeButton = screen.getByRole('button', { name: 'Close' });
+    expect(closeButton.querySelectorAll('.rwg-popup__close-icon path')).toHaveLength(2);
+    expect(closeButton.textContent).toBe('');
+    fireEvent.click(closeButton);
     expect(close).toHaveBeenCalledOnce();
   });
 
@@ -62,6 +66,32 @@ describe('Preact shared components', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
   });
 
+  it('dismisses a mobile popup only when pressing outside it', () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    const close = vi.fn();
+    render(
+      <PopupPanel display title="Mobile" onClose={close} dismissOnMobileOutsidePress>Body</PopupPanel>,
+    );
+    fireEvent.pointerDown(screen.getByRole('dialog'));
+    expect(close).not.toHaveBeenCalled();
+    fireEvent.pointerDown(document.body);
+    expect(close).toHaveBeenCalledOnce();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+  });
+
+  it('does not apply mobile outside-press dismissal on desktop', () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    const close = vi.fn();
+    render(
+      <PopupPanel display title="Desktop" onClose={close} dismissOnMobileOutsidePress>Body</PopupPanel>,
+    );
+    fireEvent.pointerDown(document.body);
+    expect(close).not.toHaveBeenCalled();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+  });
+
   it('prevents navigation for a disabled action', () => {
     render(<ActionButton theme="asmrone" href={null} />);
     const brand = screen.getByText('ASMR.one');
@@ -82,8 +112,38 @@ describe('Preact shared components', () => {
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('aria-disabled')).toBe('false');
     expect(link.classList.contains('is-disabled')).toBe(false);
-    expect(link.querySelector('.rwg-external-icon')).toBeTruthy();
+    const externalIcon = link.querySelector('.rwg-external-icon');
+    expect(externalIcon).toBeTruthy();
+    expect(externalIcon?.querySelectorAll('path')).toHaveLength(3);
     expect(link.textContent).not.toContain('↗');
+  });
+
+  it('shows the overlay scrollbar while scrolling and fades it after idle', () => {
+    vi.useFakeTimers();
+    try {
+      render(<OverlayScrollArea><li><a href="https://example.test">Result</a></li></OverlayScrollArea>);
+      const list = screen.getByRole('list');
+      const shell = list.closest('.rwg-results-scroll')!;
+      const track = shell.querySelector('.rwg-results-scrollbar')!;
+      const thumb = shell.querySelector<HTMLElement>('.rwg-results-scrollbar__thumb')!;
+      Object.defineProperties(list, {
+        clientHeight: { configurable: true, value: 100 },
+        scrollHeight: { configurable: true, value: 400 },
+        scrollTop: { configurable: true, writable: true, value: 50 },
+      });
+      Object.defineProperty(track, 'clientHeight', { configurable: true, value: 100 });
+
+      fireEvent.scroll(list);
+
+      expect(shell.classList.contains('is-scrollable')).toBe(true);
+      expect(shell.classList.contains('is-scrolling')).toBe(true);
+      expect(thumb.style.height).toBe('32px');
+      expect(thumb.style.transform).toBe('translateY(11px)');
+      vi.advanceTimersByTime(850);
+      expect(shell.classList.contains('is-scrolling')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('clamps a large popup inside the viewport when neither side fully fits', () => {

@@ -25,7 +25,9 @@ export function ActionButton({ href, theme, label }: ActionButtonProps) {
 export function ExternalLinkIcon() {
   return (
     <svg class="rwg-external-icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M8 16 17 7M10 7h7v7" />
+      <path d="M11 6H7.5A2.5 2.5 0 0 0 5 8.5v8A2.5 2.5 0 0 0 7.5 19h8a2.5 2.5 0 0 0 2.5-2.5V13" />
+      <path d="M13 5h6v6" />
+      <path d="m19 5-9.5 9.5" />
     </svg>
   );
 }

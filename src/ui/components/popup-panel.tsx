@@ -1,5 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { usePopupViewport } from '../hooks/use-popup-position';
 
 const POPUP_EXIT_FALLBACK_MS = 220;
@@ -7,11 +7,15 @@ const POPUP_EXIT_FALLBACK_MS = 220;
 interface PopupPanelProps {
   display: boolean;
   title?: string;
+  ariaLabel?: string;
+  headerIcon?: ComponentChildren;
+  headerMeta?: ComponentChildren;
   theme?: 'maniax' | 'girls' | 'default';
   className?: string;
   position?: JSX.CSSProperties;
   onClose(): void;
   dismissOnViewportScroll?: boolean;
+  dismissOnMobileOutsidePress?: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   children: ComponentChildren;
@@ -20,16 +24,21 @@ interface PopupPanelProps {
 export function PopupPanel({
   display,
   title,
+  ariaLabel,
+  headerIcon,
+  headerMeta,
   theme = 'default',
   className,
   position,
   onClose,
   dismissOnViewportScroll = false,
+  dismissOnMobileOutsidePress = false,
   onMouseEnter,
   onMouseLeave,
   children,
 }: PopupPanelProps) {
   const viewport = usePopupViewport();
+  const popupRef = useRef<HTMLElement>(null);
   const [rendered, setRendered] = useState(display);
   const [closing, setClosing] = useState(false);
 
@@ -64,14 +73,25 @@ export function PopupPanel({
     };
   }, [dismissOnViewportScroll, display, onClose, viewport.mobile]);
 
+  useEffect(() => {
+    if (!display || !viewport.mobile || !dismissOnMobileOutsidePress) return undefined;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && !popupRef.current?.contains(target)) onClose();
+    };
+    document.addEventListener('pointerdown', dismiss, true);
+    return () => document.removeEventListener('pointerdown', dismiss, true);
+  }, [dismissOnMobileOutsidePress, display, onClose, viewport.mobile]);
+
   if (!rendered) return null;
   return (
     <section
+      ref={popupRef}
       class={`rwg-popup rwg-theme-${theme}${viewport.mobile ? ' rwg-popup--mobile' : ''}${closing ? ' rwg-popup--closing' : ''}${className ? ` ${className}` : ''}`}
       style={viewport.mobile ? { ...position, ...viewport.style } : position}
       role="dialog"
       aria-modal="false"
-      aria-label={title || 'RJ Warp Gate'}
+      aria-label={ariaLabel || title || 'RJ Warp Gate'}
       aria-hidden={closing}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -82,8 +102,17 @@ export function PopupPanel({
       }}
     >
       <header class="rwg-popup__header">
-        <strong>{title}</strong>
-        <button class="rwg-popup__close" type="button" onClick={onClose} aria-label="Close">×</button>
+        <div class="rwg-popup__heading">
+          {headerIcon}
+          <strong>{title}</strong>
+          {headerMeta}
+        </div>
+        <button class="rwg-popup__close" type="button" onClick={onClose} aria-label="Close">
+          <svg class="rwg-popup__close-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7l10 10" />
+            <path d="M17 7L7 17" />
+          </svg>
+        </button>
       </header>
       <div class="rwg-popup__body">{children}</div>
     </section>

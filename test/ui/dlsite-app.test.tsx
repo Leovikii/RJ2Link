@@ -11,6 +11,7 @@ import { DlsiteApp } from '../../src/ui/dlsite/app';
 import type { ResourceResult } from '../../src/domain/work';
 
 const code = parseRjCode('RJ123456')!;
+const dialogLabel = `RJ Warp Gate · Search Results · ${code}`;
 
 beforeEach(() => {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
@@ -52,16 +53,16 @@ describe('DLsite app interactions', () => {
 
     fireEvent.mouseEnter(trigger);
 
-    expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: dialogLabel })).toBeTruthy();
     expect(screen.getByText('Login required')).toBeTruthy();
     fireEvent.click(trigger);
-    expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: dialogLabel })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: localize('copy_diagnostics') }));
     await waitFor(() => expect(clipboard.writeText).toHaveBeenCalledWith('redacted diagnostic report'));
     expect(screen.getByRole('button', { name: localize('diagnostics_copied') })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: `South Plus · ${localize('click_to_retry')}` }));
     await waitFor(() => expect(search).toHaveBeenCalledTimes(2));
-    expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: dialogLabel })).toBeTruthy();
     controller.dispose();
   });
 
@@ -72,7 +73,7 @@ describe('DLsite app interactions', () => {
 
     fireEvent.click(trigger);
 
-    expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: dialogLabel })).toBeTruthy();
     expect(search).toHaveBeenCalledOnce();
     controller.dispose();
   });
@@ -105,7 +106,7 @@ describe('DLsite app interactions', () => {
     fireEvent.mouseEnter(trigger);
     expect(screen.getByText(localize('search_queue_timeout'))).toBeTruthy();
     const asmrLink = screen.getByRole('link', { name: localize('go_to_asmrone') });
-    expect(asmrLink.closest('.rwg-provider-heading--asmrone')).toBeTruthy();
+    expect(asmrLink.closest('.rwg-provider-section--asmrone')).toBeTruthy();
     expect(asmrLink.querySelector('.rwg-external-icon')).toBeTruthy();
     expect(screen.queryByText('↗')).toBeNull();
     expect(screen.queryByRole('button', { name: localize('copy_diagnostics') })).toBeNull();
@@ -138,7 +139,7 @@ describe('DLsite app interactions', () => {
     const trigger = await screen.findByRole('button', { name: 'RJ Warp Gate · SP 1' });
     fireEvent.click(trigger);
     const retry = screen.getByRole('button', { name: `ASMR ONE · ${localize('click_to_retry')}` });
-    expect(retry.closest('.rwg-provider-heading--asmrone')).toBeTruthy();
+    expect(retry.closest('.rwg-provider-section--asmrone')).toBeTruthy();
     expect(screen.queryByRole('button', { name: `South Plus · ${localize('click_to_retry')}` })).toBeNull();
     fireEvent.click(retry);
     await waitFor(() => expect(asmrOne).toHaveBeenCalledTimes(2));
@@ -166,10 +167,11 @@ describe('DLsite app interactions', () => {
   });
 
   it('keeps multiple forum results inside the dedicated scrollable list', async () => {
+    const longTitle = 'RJ01234567RJ07654321RJ01111111RJ02222222RJ03333333RJ04444444';
     const results = Array.from({ length: 12 }, (_, index): ResourceResult => ({
       id: String(index + 1),
       providerId: 'southplus',
-      title: `Forum result ${index + 1}`,
+      title: index === 0 ? longTitle : `Forum result ${index + 1}`,
       url: `https://example.test/result/${index + 1}`,
     }));
     const { controller } = renderApp(async () => results);
@@ -177,10 +179,20 @@ describe('DLsite app interactions', () => {
 
     fireEvent.click(trigger);
 
+    const dialog = screen.getByRole('dialog', { name: dialogLabel });
     const list = screen.getByRole('list');
+    expect(dialog.classList.contains('rwg-popup--resources')).toBe(true);
+    expect(dialog.querySelector('.rwg-popup__brand')).toBeTruthy();
+    expect(screen.queryByText('Search Result')).toBeNull();
+    expect(dialog.querySelector('.rwg-popup__code')?.textContent).toBe(code);
+    expect(list.closest('.rwg-results-scroll')).toBeTruthy();
+    expect(list.parentElement?.querySelector('.rwg-results-scrollbar__thumb')).toBeTruthy();
     expect(list.classList.contains('rwg-results')).toBe(true);
     expect(list.querySelectorAll('li')).toHaveLength(12);
-    expect(list.querySelectorAll('.rwg-external-icon')).toHaveLength(12);
+    expect(list.querySelectorAll('.rwg-external-icon')).toHaveLength(0);
+    expect(screen.getByText('South Plus').closest('.rwg-provider-section--southplus')).toBeTruthy();
+    expect(dialog.querySelector('.rwg-provider-count')?.textContent).toBe('12');
+    expect(screen.getByText(longTitle)).toBeTruthy();
     controller.dispose();
   });
 
@@ -193,10 +205,10 @@ describe('DLsite app interactions', () => {
 
     fireEvent.click(trigger);
 
-    expect(screen.getByRole('dialog', { name: 'Search Result' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: dialogLabel })).toBeTruthy();
     expect(trigger.classList.contains('is-open')).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog', { name: 'Search Result' })).toBeNull();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('dialog', { name: dialogLabel })).toBeNull();
     controller.dispose();
   });
 });
