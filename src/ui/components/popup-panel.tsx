@@ -107,7 +107,12 @@ export function PopupPanel({
           <strong>{title}</strong>
           {headerMeta}
         </div>
-        <button class="rwg-popup__close" type="button" onClick={onClose} aria-label="Close">×</button>
+        <button class="rwg-popup__close" type="button" onClick={onClose} aria-label="Close">
+          <svg class="rwg-popup__close-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7l10 10" />
+            <path d="M17 7L7 17" />
+          </svg>
+        </button>
       </header>
       <div class="rwg-popup__body">{children}</div>
     </section>

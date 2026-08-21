@@ -23,7 +23,10 @@ describe('Preact shared components', () => {
     const close = vi.fn();
     render(<PopupPanel display title="Result" onClose={close}>Body</PopupPanel>);
     expect(screen.getByRole('dialog').textContent).toContain('Body');
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const closeButton = screen.getByRole('button', { name: 'Close' });
+    expect(closeButton.querySelectorAll('.rwg-popup__close-icon path')).toHaveLength(2);
+    expect(closeButton.textContent).toBe('');
+    fireEvent.click(closeButton);
     expect(close).toHaveBeenCalledOnce();
   });
 
