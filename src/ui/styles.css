@@ -9,7 +9,7 @@
 .rwg-popup__heading>strong { color:#f8fafc; font-size:18px; font-weight:800; line-height:1.2; letter-spacing:-.015em; }
 .rwg-popup__brand { display:block; flex:0 0 auto; width:24px; height:24px; border-radius:6px; object-fit:cover; box-shadow:0 1px 5px rgba(124,58,237,.22); }
 .rwg-popup__code { display:inline-flex; align-items:center; min-height:22px; padding:2px 8px; border:1px solid rgba(148,163,184,.24); border-radius:999px; color:#cbd5e1; background:rgba(148,163,184,.08); font-size:11px; font-weight:700; line-height:1; letter-spacing:.025em; }
-.rwg-popup__close { appearance:none; border:0; width:30px; height:30px; border-radius:50%; color:white; background:rgba(255,255,255,.1); cursor:pointer; font-size:20px; line-height:1; }
+.rwg-popup__close { appearance:none; display:grid; place-items:center; flex:0 0 30px; box-sizing:border-box; width:30px; height:30px; margin:0; padding:0; border:0; border-radius:50%; color:white; background:rgba(255,255,255,.1); cursor:pointer; font-family:inherit; font-size:20px; line-height:1; }
 .rwg-popup__close:hover { background:rgba(255,255,255,.2); }
 .rwg-work__hero { display:grid; grid-template-columns:190px minmax(0,1fr); gap:14px; align-items:start; }
 .rwg-work__cover-column { display:grid; gap:10px; min-width:0; }
@@ -82,7 +82,8 @@
 .rwg-fab__source--asmrone { color:#5eead4; background:rgba(20,184,166,.1); border-color:rgba(45,212,191,.28); }
 .rwg-fab__status-dot { width:6px; height:6px; border-radius:50%; background:#5eead4; box-shadow:0 0 0 2px rgba(45,212,191,.15); }
 .rwg-fab.is-loading { animation:rwg-pulse 1.2s infinite; }
-.rwg-popup--resources { overflow-x:hidden; overflow-y:auto; }
+.rwg-popup--resources { overflow-x:hidden; overflow-y:auto; scrollbar-width:none; }
+.rwg-popup--resources::-webkit-scrollbar { width:0; height:0; }
 .rwg-popup--resources .rwg-popup__body,
 .rwg-resource-panel,
 .rwg-resource-panel>section,
@@ -166,6 +167,7 @@
 .rwg-popup--mobile.rwg-popup--work .rwg-skeleton-info { gap:3px 6px; margin-top:6px; }
 .rwg-popup--mobile.rwg-popup--work .rwg-actions { gap:6px; }
 .rwg-popup--mobile .rwg-actions--cover .rwg-action { min-height:44px; padding:8px 10px; border-radius:9px; font-size:12px; }
+.rwg-popup--mobile .rwg-provider-heading { min-height:51px; }
 .rwg-popup--mobile .rwg-provider-control { width:36px; height:36px; border-radius:10px; }
 .rwg-popup--mobile .rwg-results { max-height:min(300px,48dvh); }
 @media (max-width:768px) {

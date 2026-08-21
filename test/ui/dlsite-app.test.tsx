@@ -207,7 +207,7 @@ describe('DLsite app interactions', () => {
 
     expect(screen.getByRole('dialog', { name: dialogLabel })).toBeTruthy();
     expect(trigger.classList.contains('is-open')).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.pointerDown(document.body);
     expect(screen.queryByRole('dialog', { name: dialogLabel })).toBeNull();
     controller.dispose();
   });

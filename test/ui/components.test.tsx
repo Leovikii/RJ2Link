@@ -63,6 +63,32 @@ describe('Preact shared components', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
   });
 
+  it('dismisses a mobile popup only when pressing outside it', () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    const close = vi.fn();
+    render(
+      <PopupPanel display title="Mobile" onClose={close} dismissOnMobileOutsidePress>Body</PopupPanel>,
+    );
+    fireEvent.pointerDown(screen.getByRole('dialog'));
+    expect(close).not.toHaveBeenCalled();
+    fireEvent.pointerDown(document.body);
+    expect(close).toHaveBeenCalledOnce();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+  });
+
+  it('does not apply mobile outside-press dismissal on desktop', () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    const close = vi.fn();
+    render(
+      <PopupPanel display title="Desktop" onClose={close} dismissOnMobileOutsidePress>Body</PopupPanel>,
+    );
+    fireEvent.pointerDown(document.body);
+    expect(close).not.toHaveBeenCalled();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+  });
+
   it('prevents navigation for a disabled action', () => {
     render(<ActionButton theme="asmrone" href={null} />);
     const brand = screen.getByText('ASMR.one');

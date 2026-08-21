@@ -140,6 +140,7 @@ export function DlsiteApp({ code, controller, storage, diagnostics, clipboard }:
         className="rwg-popup--resources"
         position={popupPosition}
         onClose={() => setOpen(false)}
+        dismissOnMobileOutsidePress
         onMouseEnter={cancelHide}
         onMouseLeave={startHide}
       >

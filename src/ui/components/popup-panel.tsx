@@ -1,5 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { usePopupViewport } from '../hooks/use-popup-position';
 
 const POPUP_EXIT_FALLBACK_MS = 220;
@@ -15,6 +15,7 @@ interface PopupPanelProps {
   position?: JSX.CSSProperties;
   onClose(): void;
   dismissOnViewportScroll?: boolean;
+  dismissOnMobileOutsidePress?: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   children: ComponentChildren;
@@ -31,11 +32,13 @@ export function PopupPanel({
   position,
   onClose,
   dismissOnViewportScroll = false,
+  dismissOnMobileOutsidePress = false,
   onMouseEnter,
   onMouseLeave,
   children,
 }: PopupPanelProps) {
   const viewport = usePopupViewport();
+  const popupRef = useRef<HTMLElement>(null);
   const [rendered, setRendered] = useState(display);
   const [closing, setClosing] = useState(false);
 
@@ -70,9 +73,20 @@ export function PopupPanel({
     };
   }, [dismissOnViewportScroll, display, onClose, viewport.mobile]);
 
+  useEffect(() => {
+    if (!display || !viewport.mobile || !dismissOnMobileOutsidePress) return undefined;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && !popupRef.current?.contains(target)) onClose();
+    };
+    document.addEventListener('pointerdown', dismiss, true);
+    return () => document.removeEventListener('pointerdown', dismiss, true);
+  }, [dismissOnMobileOutsidePress, display, onClose, viewport.mobile]);
+
   if (!rendered) return null;
   return (
     <section
+      ref={popupRef}
       class={`rwg-popup rwg-theme-${theme}${viewport.mobile ? ' rwg-popup--mobile' : ''}${closing ? ' rwg-popup--closing' : ''}${className ? ` ${className}` : ''}`}
       style={viewport.mobile ? { ...position, ...viewport.style } : position}
       role="dialog"
