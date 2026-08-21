@@ -155,9 +155,10 @@ CI 至少执行 `typecheck`、`test` 和 `build`。文档提交可以跳过完�
 ### CI 与正式发布
 
 - 所有指向 `main` 的 pull request（包括纯 README/资源变更）都必须运行名为 `quality-checks` 的必需状态检查；仓库 Ruleset 应选择该检查。该任务只执行质量检查，不创建或更新 GitHub Release。
-- 纯 Markdown/展示资源合并后的 `main` push 可以跳过重复质量任务；包含代码、配置或工作流的普通 `main` push 仍执行质量检查，但不会发布。
-- 只有推送与 `package.json` 版本一致的 `v*` tag 才进入正式发布任务；例如 `package.json` 为 `1.3.1` 时，只接受 `v1.3.1`。
-- tag 构建通过同一质量任务生成 userscript，并通过短期 workflow artifact 原样交给发布任务，避免发布阶段二次构建。
+- 纯 Markdown/展示资源合并后的 `main` push 可以跳过重复质量任务；包含代码、配置或工作流的 `main` push 仍执行质量检查。
+- 每次触发 workflow 的 `main` push 都读取 `package.json` 版本并检查对应 `v*` tag：标签不存在时，质量检查通过后自动创建标签并发布；标签已经存在时只执行质量检查，不创建或更新 Release。版本号更新会自然产生一个尚不存在的新标签，例如 `1.3.2` 对应 `v1.3.2`。
+- 直接推送与 `package.json` 版本一致的 `v*` tag 仍可触发同一发布流程；标签与包版本不一致时明确失败。
+- 触发发布的 main 构建或 tag 构建都通过同一质量任务生成 userscript，并通过短期 workflow artifact 原样交给发布任务，避免发布阶段二次构建。
 - 发布任务检测到同名 GitHub Release 已存在时必须明确跳过，不能覆盖既有说明或附件。
 - README、Markdown 文档和展示资源变更在 PR 阶段仍执行必需检查；相对链接和三语言一致性还需在本地检查。
 

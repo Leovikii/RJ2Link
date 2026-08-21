@@ -22,17 +22,47 @@ jobs:
   quality-checks:
     name: quality-checks
     runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.release_meta.outputs.should_release }}
+      release_tag: ${{ steps.release_meta.outputs.release_tag }}
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'npm'
+
+      - name: Resolve release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          RELEASE_TAG="v${CURRENT_VERSION}"
+          SHOULD_RELEASE=false
+
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            if [[ "$GITHUB_REF_NAME" != "$RELEASE_TAG" ]]; then
+              echo "Tag $GITHUB_REF_NAME does not match package version $RELEASE_TAG" >&2
+              exit 1
+            fi
+            SHOULD_RELEASE=true
+          elif [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]] \
+            && ! git rev-parse --verify --quiet "refs/tags/$RELEASE_TAG" >/dev/null; then
+            SHOULD_RELEASE=true
+            echo "Tag $RELEASE_TAG is missing; the current version will be published."
+          fi
+
+          echo "should_release=$SHOULD_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci
@@ -50,21 +80,23 @@ jobs:
         run: npm run build
 
       - name: Upload release artifact
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.release_meta.outputs.should_release == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: userscript-${{ github.ref_name }}
+          name: userscript-${{ steps.release_meta.outputs.release_tag }}
           path: dist/rj-warp-gate.user.js
           if-no-files-found: error
           retention-days: 1
 
   release:
-    name: Publish tagged release
-    if: startsWith(github.ref, 'refs/tags/v')
+    name: Publish version release
+    if: needs.quality-checks.outputs.should_release == 'true'
     needs: quality-checks
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      RELEASE_TAG: ${{ needs.quality-checks.outputs.release_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -79,8 +111,28 @@ jobs:
       - name: Validate tag and package version
         run: |
           EXPECTED_TAG="v$(node -p "require('./package.json').version")"
-          if [ "$GITHUB_REF_NAME" != "$EXPECTED_TAG" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package version $EXPECTED_TAG" >&2
+          if [ "$RELEASE_TAG" != "$EXPECTED_TAG" ]; then
+            echo "Release tag $RELEASE_TAG does not match package version $EXPECTED_TAG" >&2
+            exit 1
+          fi
+
+      - name: Ensure release tag
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            if git rev-parse --verify --quiet "refs/tags/$RELEASE_TAG" >/dev/null; then
+              TAG_COMMIT=$(git rev-list -n 1 "$RELEASE_TAG")
+              if [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
+                echo "Tag $RELEASE_TAG already points to $TAG_COMMIT instead of $GITHUB_SHA" >&2
+                exit 1
+              fi
+            else
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+              git push origin "$RELEASE_TAG"
+            fi
+          elif ! git rev-parse --verify --quiet "refs/tags/$RELEASE_TAG" >/dev/null; then
+            echo "Tag $RELEASE_TAG is unavailable in this checkout" >&2
             exit 1
           fi
 
@@ -89,9 +141,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Release $GITHUB_REF_NAME already exists; publishing will be skipped."
+            echo "Release $RELEASE_TAG already exists; publishing will be skipped."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
@@ -100,18 +152,18 @@ jobs:
         if: steps.existing_release.outputs.exists != 'true'
         uses: actions/download-artifact@v4
         with:
-          name: userscript-${{ github.ref_name }}
+          name: userscript-${{ env.RELEASE_TAG }}
           path: dist
 
       - name: Generate Changelog
         if: steps.existing_release.outputs.exists != 'true'
         id: changelog
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          PREV_TAG=$(git describe --tags --abbrev=0 "$RELEASE_TAG^" 2>/dev/null || true)
           if [ -z "$PREV_TAG" ]; then
-            LOGS=$(git log "$GITHUB_REF_NAME" --pretty=format:"- %s" --no-merges)
+            LOGS=$(git log "$RELEASE_TAG" --pretty=format:"- %s" --no-merges)
           else
-            LOGS=$(git log "$PREV_TAG..$GITHUB_REF_NAME" --pretty=format:"- %s" --no-merges)
+            LOGS=$(git log "$PREV_TAG..$RELEASE_TAG" --pretty=format:"- %s" --no-merges)
           fi
           {
             echo "body<<EOF"
@@ -124,8 +176,8 @@ jobs:
         if: steps.existing_release.outputs.exists != 'true'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
-          name: RJ-Warp-Gate ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: RJ-Warp-Gate ${{ env.RELEASE_TAG }}
           body: ${{ steps.changelog.outputs.body }}
           files: dist/rj-warp-gate.user.js
           fail_on_unmatched_files: true
